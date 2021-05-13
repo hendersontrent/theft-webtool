@@ -1,0 +1,14 @@
+## Time Series Feature Extraction and Visualisation Application
+***
+
+### What is this application?
+
+This application automatically takes an input dataset containing multiple time series, parses it, calculates feature matrices, and produces all analysis for interactive visualisation all within your web browser.
+
+### How do I use it?
+
+The application only requires a time-series dataset to be uploaded by the user to get started. Navigate to the homepage and upload your time series dataset. More input formats are continuously being added. Please check back soon for more options if you data format is not currently accepted, otherwise, please convert to an accepted format in the meantime.
+
+### Who made it?
+
+This application was developed by [Trent Henderson](https://twitter.com/trentlikesstats) with input and guidance from [Ben Fulcher](http://www.benfulcher.com) - both researchers in the [Dynamics and Neural Systems Group](https://dynamicsandneuralsystems.github.io) at The University of Sydney, School of Physics. Please send any conceptual or general questions to Trent via [email](then6675@sydney.edu.au) or Ben [via email](ben.fulcher@sydney.edu.au). If you identify an issue with the application itself, please log an issue at the [GitHub repository](https://github.com/hendersontrent/theft-webtool/issues).
