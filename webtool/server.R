@@ -88,7 +88,17 @@ shinyServer <- function(input, output, session) {
   #------------------ Low dim page --------------
   
   output$low_dim_plot <- renderPlotly({
-    plot_low_dimension(tmp, is_normalised = FALSE, id_var = "id", group_var = "group", 
+    
+    # Account for lack of data upload to avoid error message
+    
+    validate(
+      need(featureMatrix(), "Please upload a dataset to get started."
+      )
+    )
+    
+    # Draw graphic
+    
+    plot_low_dimension(featureMatrix(), is_normalised = FALSE, id_var = "id", group_var = "group", 
                        method = input$inputScaler, 
                        plot = TRUE)
   })
