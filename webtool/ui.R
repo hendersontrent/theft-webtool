@@ -59,15 +59,52 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                                         )
                                                        )
                                                       ),
-                                     column(2)
-                                     )
+                                     column(2),
+                                     column(6,
+                                            fluidRow(
+                                              textInput("input_id_var", "Enter the exact name of the unique ID variable that identifies each time series",
+                                                        value = "Enter the ID variable name...")
+                                            ),
+                                            fluidRow(
+                                              textInput("input_group_var", "Enter the exact name of the grouping variable if one exists",
+                                                        value = "Enter the group variable name...")
+                                            ),
+                                            fluidRow(
+                                              textInput("input_time_var", "If your data is in long (tidy) format, enter the exact name of the variable specifying the time index",
+                                                        value = "Enter the time variable name...")
+                                            ),
+                                            fluidRow(
+                                              textInput("input_values_var", "If your data is in long (tidy) format, enter the exact name of the variable specifying the values",
+                                                        value = "Enter the ID variable name...")
+                                            )
+                                           )
+                                          )
                             
                    ),
                    
                    #------------------ Low dim page --------------
                    
                    tabPanel(navtab1,
-                            fluidRow(h1("Low Dimension Visualisation"))),
+                            fluidRow(h1("Low Dimension Visualisation")),
+                            sidebarLayout(
+                              sidebarPanel(
+                                h2("Page Information"),
+                                p("This page visualises the time series features in a low-dimensional representation."),
+                                br(),
+                                selectInput("inputScaler", "Select a rescaling function to apply prior to performing principal components analysis",
+                                            choices = all_scalers, selected = all_scalers[1], multiple = FALSE)
+                              ),
+                              mainPanel(fluidRow(
+                                h3("Low Dimensional Plot"),
+                                shinycssloaders::withSpinner(plotlyOutput("low_dim_plot", height = "800px"))
+                              ),
+                              fluidRow(
+                                h3("Raw Time Series"),
+                                shinycssloaders::withSpinner(plotlyOutput("raw_ts_plot", height = "300px"))
+                               )
+                              )
+                             )
+                            ),
                    
                    #------------------ Classifier page -----------
                    
@@ -77,12 +114,36 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                    #------------------ Quality page --------------
                    
                    tabPanel(navtab3,
-                            fluidRow(h1("Feature Calculation Quality"))),
+                            fluidRow(h1("Feature Calculation Quality")),
+                            sidebarLayout(
+                              sidebarPanel(
+                                h2("Page Information"),
+                                p("This page visualises the quality of the calculated feature matrix by computing amounts of each data type."),
+                              ),
+                              mainPanel(fluidRow(
+                                h3("Data Quality Plot"),
+                                shinycssloaders::withSpinner(plotlyOutput("data_qual_plot", height = "300px"))
+                                )
+                               )
+                              )
+                   ),
                    
                    #------------------ Matrix page ---------------
                    
                    tabPanel(navtab4,
-                            fluidRow(h1("Feature Matrix Visualisation"))),
+                            fluidRow(h1("Feature Matrix Visualisation")),
+                            sidebarLayout(
+                              sidebarPanel(
+                                h2("Page Information"),
+                                p("This page visualises the time series feature matrix as a 'connectivity' matrix/heatmap of correlations between each unique time series' feature vectors."),
+                              ),
+                              mainPanel(fluidRow(
+                                h3("Feature Matrix Correlation Plot"),
+                                shinycssloaders::withSpinner(plotlyOutput("feat_mat_plot", height = "300px"))
+                              )
+                             )
+                            )
+                   ),
                    
                    #------------------ About page ----------------
                    
