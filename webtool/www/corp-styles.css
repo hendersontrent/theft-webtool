@@ -1,0 +1,195 @@
+
+#quadrant_sidebar {
+            background-color: white;
+            border-width: 0;
+        }
+        
+#m2_quadrant_sidebar {
+            background-color: white;
+            border-width: 0;
+        }        
+        
+#drill_up {
+  background-color: #e6e6e1;
+  border-color: gray;
+  border-width: 2px;
+  border-style: outset;
+  font-size: 8pt;
+  width: 90px;
+  height:30px;
+  color: gray;
+}   
+
+#drill_down {
+  background-color: #e6e6e1;
+  border-color: gray;
+  border-width: 2px;
+  border-style: outset;
+  font-size: 8pt;
+  width: 90px;
+  height:30px;
+  color: gray;
+}
+
+#m2_drill_up {
+  background-color: #e6e6e1;
+  border-color: gray;
+  border-width: 2px;
+  border-style: outset;
+  font-size: 8pt;
+  width: 90px;
+  height:30px;
+  color: gray;
+}   
+
+#m2_drill_down {
+  background-color: #e6e6e1;
+  border-color: gray;
+  border-width: 2px;
+  border-style: outset;
+  font-size: 8pt;
+  width: 90px;
+  height:30px;
+  color: gray;
+}
+
+#drill_up_en {
+  background-color: #e6e6e1;
+  border-color: gray;
+  border-width: 2px;
+  border-style: outset;
+  font-size: 8pt;
+  width: 90px;
+  height:30px;
+  color: gray;
+}   
+
+#drill_down_en {
+  background-color: #e6e6e1;
+  border-color: gray;
+  border-width: 2px;
+  border-style: outset;
+  font-size: 8pt;
+  width: 90px;
+  height:30px;
+  color: gray;
+}
+
+#download_one {
+  background-color: #e6e6e1;
+  border-color: gray;
+  border-width: 2px;
+  border-style: outset;
+  font-size: 9pt;
+  width: 220px;
+  height:30px;
+  color: gray;
+}
+
+#download_two {
+  background-color: #e6e6e1;
+  border-color: gray;
+  border-width: 2px;
+  border-style: outset;
+  font-size: 9pt;
+  width: 220px;
+  height:30px;
+  color: gray;
+}
+        
+.navbar-default {
+    background-color: #05445E !important;
+}
+
+.navbar-default:hover {
+    background-color: #05445E !important;
+    color:#FD62AD!important;
+}
+
+
+
+.navbar-nav > li > a, .navbar-brand {
+                   padding-top:0 !important; 
+                   padding-bottom:0 !important;
+                   height: 75px;
+                   line-height: 75px;
+                   color: #ffffff!important;
+                   background-color:inherit!important;
+                   font-weight:bold!important;
+                   text-transform:uppercase!important;
+                 }
+                 .navbar-default .navbar-nav>.active>a{
+                    color: #FD62AD!important;
+                 }
+
+.navbar {
+  min-height:75px !important;
+ 
+}
+
+
+.navbar-default .navbar-brand {
+                         color: white;}
+                         
+.navbar-default .navbar-brand:hover {
+                         color: white;}
+                         
+
+             
+                    
+
+.tabbable > .nav > li > a                  {background-color: #e6e6e1;  color:#05445E}
+.tabbable > .nav > li[class=active]    > a {background-color: white; color:black}
+
+
+body {
+  font-family: "Segoe UI", Arial, helvetica, sans-serif;
+  background-color: #e6e6e1;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+h1 {
+  font-family: "Segoe UI", Arial, helvetica, sans-serif;
+  font-weight: bold;
+  color: #05445E;
+  font-size: 42px; 
+}
+
+h2 {
+  font-size: 20px;
+}
+
+h3 {
+  font-weight: bold;
+  color: #05445E;
+  font-size: 18px; 
+}
+
+h4 {
+  color: #05445E;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.title {
+  margin-right: 200px;
+  font-weight: bold;
+}
+
+td {
+  font-size: 85%;
+}
+
+th {
+  color: #05445E;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+
+.btn:hover{
+  background-color: white;
+  color:   black;
+  font-weight: bold;
+  }

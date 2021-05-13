@@ -7,14 +7,18 @@
 # Author: Trent Henderson, 13 May 2021
 #-------------------------------------
 
+library(shiny)
 library(dplyr)
 library(magrittr)
 library(tidyr)
+library(stringr)
 library(ggplot2)
 library(Rcatch22)
 library(theft)
+library(readxl)
 library(foreign)
 library(plotly)
+library(shinyWidgets)
 
 # Load in any HTML imports
 
