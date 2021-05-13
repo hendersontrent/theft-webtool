@@ -73,8 +73,8 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                    ),
                    
                    fluidRow(style = "height: 50px;"),
-                   fluidRow(style = "height: 50px; color: white; background-color: #00264d; text-align: center;line-height: 50px;", HTML(footer)),
-                   fluidRow(style = "height: 50px; background-color: #e6e6e1;")
+                   fluidRow(style = "height: 50px; color: white; background-color: #003f5c; text-align: center;line-height: 50px;", HTML(footer)),
+                   fluidRow(style = "height: 50px; background-color: #f1f1f1;")
                    
   )
 )
