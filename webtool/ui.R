@@ -21,24 +21,37 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                           </center>
                                           "  
                                      )
+                            ),
+                            
+                            p(),
+                            fluidRow(
+                              column(2),
+                              column(8, style = "min-height: 150px;",
+                                     HTML(home_page)
+                              ),
+                              column(2)
                             )
                    ),
                    
                    #------------------ Low dim page --------------
                    
-                   tabPanel(navtab1),
+                   tabPanel(navtab1,
+                            fluidRow(h1("Low Dimension Visualisation"))),
                    
                    #------------------ Classifier page -----------
                    
-                   tabPanel(navtab2),
+                   tabPanel(navtab2,
+                            fluidRow(h1("Classification Performance"))),
                    
                    #------------------ Quality page --------------
                    
-                   tabPanel(navtab3),
+                   tabPanel(navtab3,
+                            fluidRow(h1("Feature Calculation Quality"))),
                    
                    #------------------ Matrix page ---------------
                    
-                   tabPanel(navtab4),
+                   tabPanel(navtab4,
+                            fluidRow(h1("Feature Matrix Visualisation"))),
                    
                    #------------------ About page ----------------
                    
