@@ -12,18 +12,20 @@ library(dplyr)
 library(magrittr)
 library(tidyr)
 library(stringr)
+library(readr)
 library(ggplot2)
 library(reshape2)
 library(tibble)
 library(stats)
 library(scales)
 library(broom)
-#library(Rcatch22)
-#library(theft)
+library(Rcatch22)
+#library(theft) # Manual implementation for now until on CRAN
 library(readxl)
 library(foreign)
 library(plotly)
 library(shinyWidgets)
+library(shinycssloaders)
 library(feasts)
 library(tsfeatures)
 
@@ -55,3 +57,7 @@ navtab5 <- "ABOUT"
 # Turn off scientific notation
 
 options(scipen = 999)
+
+# Helper vectors
+
+all_scalers <- c("z-score", "Sigmoid", "RobustSigmoid", "MinMax", "MeanSubtract")

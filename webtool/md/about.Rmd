@@ -5,6 +5,8 @@
 
 This application automatically takes an input dataset containing multiple time series, parses it, calculates feature matrices, and produces all analysis for interactive visualisation all within your web browser. If your data contains a binary class label vector, the application can also produce automated classification using cross-validated machine learning algorithms with the calculated feature matrices as inputs.
 
+The backbone of the application is the `R` package [`theft`](https://github.com/hendersontrent/theft) - Tools for Handling Extraction of Features from Time-series. This application extends the core functions of `theft` into a user-driven setting through the conversion of static graphics and computations included in the package to JavaScript and HTML driven content appropriate for a web browser.
+
 ### How do I use it?
 
 The application only requires a time-series dataset to be uploaded by the user to get started. Navigate to the homepage and upload your time series dataset. More input formats are continuously being added. Please check back soon for more options if you data format is not currently accepted, otherwise, please convert to an accepted format in the meantime.
