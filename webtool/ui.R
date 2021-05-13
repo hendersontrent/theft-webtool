@@ -2,7 +2,7 @@
 # Define UI for web application
 
 shinyUI(navbarPage(theme = "corp-styles.css", 
-                   title = div(img(src = "MouseConnectogram.png", height = '30px', hspace ='30'),
+                   title = div(img(src = "Fulcher_Ben_MonashUniversity.png", height = '30px', hspace = '30'),
                                ""),
                    position = c("static-top"), windowTitle = "Time Series Feature Exploration",
                    id = "page_tab",
@@ -14,16 +14,12 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                               tags$link(rel = "stylesheet", type = "text/css", href = "corp-styles.css")
                             ),
                             
-                            fluidRow(style = "background-color: white; padding-top: 0", 
-                                     HTML("
-                                          <center>
-                                          <img src= 'MouseConnectogram.png', height = '175px'>
-                                          </center>
-                                          "  
-                                     )
-                            ),
+                            # Dope background
                             
-                            p(),
+                            setBackgroundImage(src = "Fulcher_Ben_MonashUniversity_trans2.png"),
+                            
+                            # Intro text
+                            
                             fluidRow(
                               column(2),
                               column(8, style = "min-height: 150px;",
@@ -32,17 +28,39 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                               column(2)
                             ),
                             
-                            # User input box
+                            # Dataset upload
                             
                             fluidRow(
-                              column(5),
-                              column(4,
-                                     fileInput("userUpload", HTML("Upload your time series dataset"),
-                                               multiple = FALSE, accept = c(".csv", ".xlsx", ".txt", ".xls",
-                                                                            width = "600px"))
-                                     ),
-                              column(5)
-                              )
+                                     column(2),
+                                     column(8,
+                                            h2("Initial Dataset Upload"),
+                                            p("To get started, please use the widget below to upload your datafile depending on whether you have a single file with all information or a time series file and a corresponding metadata file (e.g. ID variables, class labels). Currently accepted formats are: .csv, .xlsx, .xls, .txt. More file types will be added soon."),
+                                            tabsetPanel(id = "landing_tabs",
+                                              tabPanel("Single Datafile",
+                                                       br(),
+                                                       fluidRow(
+                                                         fileInput("userUpload", HTML("Upload your time series file"),
+                                                                          multiple = FALSE, accept = c(".csv", ".xlsx", ".txt", ".xls",
+                                                                                                       width = "600px"))
+                                                         )
+                                                       ),
+                                              tabPanel("Datafile + Metadata File",
+                                                       br(),
+                                                       fluidRow(
+                                                         fileInput("userUpload2", HTML("Upload your time series file"),
+                                                                          multiple = FALSE, accept = c(".csv", ".xlsx", ".txt", ".xls",
+                                                                                                       width = "600px"))
+                                                         ),
+                                                       fluidRow(
+                                                         fileInput("userUpload2Meta", HTML("Upload your metadata file"),
+                                                                          multiple = FALSE, accept = c(".csv", ".xlsx", ".txt", ".xls",
+                                                                                                       width = "600px"))
+                                                         )
+                                                        )
+                                                       )
+                                                      ),
+                                     column(2)
+                                     )
                             
                    ),
                    
@@ -74,7 +92,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                    
                    fluidRow(style = "height: 50px;"),
                    fluidRow(style = "height: 50px; color: white; background-color: #003f5c; text-align: center;line-height: 50px;", HTML(footer)),
-                   fluidRow(style = "height: 50px; background-color: #f1f1f1;")
+                   fluidRow(style = "height: 50px;")
                    
   )
 )
