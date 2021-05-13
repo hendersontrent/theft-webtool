@@ -30,7 +30,20 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                      HTML(home_page)
                               ),
                               column(2)
-                            )
+                            ),
+                            
+                            # User input box
+                            
+                            fluidRow(
+                              column(5),
+                              column(4,
+                                     fileInput("userUpload", HTML("Upload your time series dataset"),
+                                               multiple = FALSE, accept = c(".csv", ".xlsx", ".txt", ".xls",
+                                                                            width = "600px"))
+                                     ),
+                              column(5)
+                              )
+                            
                    ),
                    
                    #------------------ Low dim page --------------
