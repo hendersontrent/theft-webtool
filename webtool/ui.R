@@ -39,9 +39,11 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                               tabPanel("Single Long Datafile",
                                                        br(),
                                                        fluidRow(
-                                                         fileInput("userUpload", HTML("Upload your time series file"),
-                                                                          multiple = FALSE, accept = c(".csv", ".xlsx", ".txt", ".xls",
-                                                                                                       width = "600px"))
+                                                         column(2,
+                                                           fileInput("userUpload", HTML("Upload your time series file"),
+                                                                            multiple = FALSE, accept = c(".csv", ".xlsx", ".txt", ".xls",
+                                                                                                         width = "600px"))
+                                                          )
                                                          ),
                                                        fluidRow(
                                                          column(2,
@@ -59,20 +61,24 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                                        fluidRow(
                                                          column(2,
                                                                 textInput("input_values_var", "If your data is in long (tidy) format, enter the exact name of the variable specifying the values",
-                                                                          value = "Enter the ID variable name..."))
+                                                                          value = "Enter the values variable name..."))
                                                         )
                                                        ),
                                               tabPanel("Wide Datafile + Metadata File",
                                                        br(),
                                                        fluidRow(
-                                                         fileInput("userUpload2", HTML("Upload your time series file"),
-                                                                          multiple = FALSE, accept = c(".csv", ".xlsx", ".txt", ".xls",
-                                                                                                       width = "600px"))
+                                                         column(2,
+                                                           fileInput("userUpload2", HTML("Upload your time series file"),
+                                                                            multiple = FALSE, accept = c(".csv", ".xlsx", ".txt", ".xls",
+                                                                                                         width = "600px"))
+                                                          )
                                                          ),
                                                        fluidRow(
+                                                         column(2,
                                                          fileInput("userUpload2Meta", HTML("Upload your metadata file"),
                                                                           multiple = FALSE, accept = c(".csv", ".xlsx", ".txt", ".xls",
                                                                                                        width = "600px"))
+                                                          )
                                                          ),
                                                        fluidRow(
                                                          column(2,
@@ -105,12 +111,16 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                             choices = c("None"), selected = "None", multiple = FALSE)
                               ),
                               mainPanel(fluidRow(
-                                h3("Low Dimensional Plot"),
-                                shinycssloaders::withSpinner(plotlyOutput("low_dim_plot", height = "500px"))
+                                column(8,
+                                  h3("Low Dimensional Plot"),
+                                  shinycssloaders::withSpinner(plotlyOutput("low_dim_plot", height = "500px"))
+                               )
                               ),
                               fluidRow(
-                                h3("Raw Time Series"),
-                                shinycssloaders::withSpinner(plotlyOutput("raw_ts_plot", height = "300px"))
+                                column(8,
+                                  h3("Raw Time Series"),
+                                  shinycssloaders::withSpinner(plotlyOutput("raw_ts_plot", height = "300px"))
+                                )
                                )
                               )
                              )
@@ -131,11 +141,13 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                 p("This page visualises the quality of the calculated feature matrix by computing amounts of each data type."),
                               ),
                               mainPanel(fluidRow(
-                                h3("Data Quality Plot"),
-                                shinycssloaders::withSpinner(plotlyOutput("data_qual_plot", height = "300px"))
-                                )
-                               )
-                              )
+                                column(8,
+                                  h3("Data Quality Plot"),
+                                  shinycssloaders::withSpinner(plotlyOutput("data_qual_plot", height = "300px"))
+                       )
+                      )
+                     )
+                    )
                    ),
                    
                    #------------------ Matrix page ---------------
