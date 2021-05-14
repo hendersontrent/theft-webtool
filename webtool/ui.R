@@ -99,11 +99,14 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                 p("This page visualises the time series features in a low-dimensional representation."),
                                 br(),
                                 selectInput("inputScaler", "Select a rescaling function to apply prior to performing principal components analysis",
-                                            choices = all_scalers, selected = all_scalers[1], multiple = FALSE)
+                                            choices = all_scalers, selected = all_scalers[1], multiple = FALSE),
+                                br(),
+                                selectInput("selectID", "Select a unique time-series ID to explore further",
+                                            choices = c("None"), selected = "None", multiple = FALSE)
                               ),
                               mainPanel(fluidRow(
                                 h3("Low Dimensional Plot"),
-                                shinycssloaders::withSpinner(plotlyOutput("low_dim_plot", height = "800px"))
+                                shinycssloaders::withSpinner(plotlyOutput("low_dim_plot", height = "500px"))
                               ),
                               fluidRow(
                                 h3("Raw Time Series"),

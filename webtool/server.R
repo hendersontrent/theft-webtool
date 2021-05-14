@@ -103,6 +103,35 @@ shinyServer <- function(input, output, session) {
                        plot = TRUE)
   })
   
+  output$raw_ts_plot <- renderPlotly({
+    
+    # Account for lack of data upload to avoid error message
+    
+    validate(
+      need(featureMatrix(), "Please upload a dataset to get started."
+      )
+    )
+    
+    if(input$selectID != "None"){
+      
+      # Filter to time-series of interest
+      
+      featureMatrixFilt <- featureMatrix %>%
+        filter(id == input$selectID)
+      
+      # Draw graphic
+      
+      draw_ts(data = featureMatrix())
+      
+    } else{
+      
+      validate(
+        need(featureMatrixFilt(), "Please select a unique ID to generate the time-series plot."
+        )
+      )
+    }
+  })
+  
   #------------------ Classifier page -----------
   
   
