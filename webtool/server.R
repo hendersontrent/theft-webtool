@@ -71,8 +71,8 @@ shinyServer <- function(input, output, session) {
       
       # Calculate features
       
-      featureMatrix <- calculate_features(tmp(), id_var = input$input_id_var, time_var = input$input_time_var, values_var = input$input_values_var, 
-                                          feature_set = "catch22") %>%
+      featureMatrix <- calculate_features(tmp(), id_var = input$input_id_var, time_var = input$input_time_var, 
+                                          values_var = input$input_values_var, feature_set = "catch22") %>%
         mutate(id = as.character(id))
       
       # Re-join group labels
@@ -135,7 +135,7 @@ shinyServer <- function(input, output, session) {
     # Account for lack of data upload to avoid error message
     
     validate(
-      need(featureMatrix(), "Please upload a dataset to get started."
+      need(tmp(), "Please upload a dataset to get started."
       )
     )
     
@@ -143,17 +143,17 @@ shinyServer <- function(input, output, session) {
       
       # Filter to time-series of interest
       
-      featureMatrixFilt <- featureMatrix %>%
+      tmpFilt <- tmp() %>%
         filter(id == input$selectID)
       
       # Draw graphic
       
-      draw_ts(data = featureMatrixFilt)
+      draw_ts(data = tmpFilt)
       
     } else{
       
       validate(
-        need(featureMatrixFilt, "Please select a unique ID to generate the time-series plot."
+        need(tmpFilt, "Please select a unique ID to generate the time-series plot."
         )
       )
     }
