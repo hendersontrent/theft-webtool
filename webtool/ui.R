@@ -14,7 +14,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                               tags$link(rel = "stylesheet", type = "text/css", href = "corp-styles.css")
                             ),
                             
-                            # Dope background
+                            # Nice lab group background
                             
                             setBackgroundImage(src = "Fulcher_Ben_MonashUniversity_trans2.png"),
                             

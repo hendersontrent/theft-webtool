@@ -61,12 +61,13 @@ shinyServer <- function(input, output, session) {
       
       if(!str_detect(input$input_group_var, " ")){
         group_labs <- tmp() %>%
-          group_by(input$input_id_var, input$input_group_var) %>%
+          rename(id = all_of(input$input_id_var),
+                 group = all_of(input$input_group_var)) %>%
+          group_by(id, group) %>%
           summarise(counter = n()) %>%
           ungroup() %>%
           dplyr::select(-c(counter)) %>%
-          rename(id = 1,
-                 group = 2)
+          mutate(id = as.character(id))
       }
       
       # Calculate features
@@ -92,8 +93,7 @@ shinyServer <- function(input, output, session) {
   
   observeEvent(featureMatrix(), {
     
-    default <- c("None")
-    thechoices <- append(default, featureMatrix()$id)
+    thechoices <- featureMatrix()$id
     
     updateSelectInput(session, "selectID", choices = thechoices)
   })
@@ -141,19 +141,26 @@ shinyServer <- function(input, output, session) {
     
     if(input$selectID != "None"){
       
-      # Filter to time-series of interest
+      p <- tmp() %>%
+        filter(id == input$selectID) %>%
+        ggplot(aes(x = timepoint, y = values, group = 1,
+                   text = paste('<b>ID:</b>', id,
+                                '<br><b>Timepoint:</b>', timepoint,
+                                '<br><b>Value:</b>', round(values, digits = 2)))) +
+        geom_line(size = 1.05, colour = "#FFBA67") +
+        theme_bw() +
+        theme(panel.grid.minor = element_blank())
       
-      tmpFilt <- tmp() %>%
-        filter(id == input$selectID)
+      # Convert to interactive graphic
       
-      # Draw graphic
-      
-      draw_ts(data = tmpFilt)
+      p_int <- ggplotly(p, tooltip = c("text")) %>%
+        layout(legend = list(orientation = "h", x = 0, y = -0.2)) %>%
+        config(displayModeBar = FALSE)
       
     } else{
       
       validate(
-        need(tmpFilt, "Please select a unique ID to generate the time-series plot."
+        need(featureMatrix(), "Please select a unique ID to generate the time-series plot."
         )
       )
     }
