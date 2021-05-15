@@ -11,39 +11,38 @@ shinyServer <- function(input, output, session) {
   # Read in inputted data and parse into tidy format
   #-------------------------------------------------
   
-  # Parse file(s) into tidy format
+  # Parse file(s) into tidy format with contingency on button
   
-  tmp <- reactive({
+  tmp <- eventReactive(input$run, {
     
     singledat <- input$userUpload
-    multidat <- input$userUpload2
-    multidat_meta <- input$userUpload2Meta
-    
-    if(is.null(multidat)){
+      multidat <- input$userUpload2
+      multidat_meta <- input$userUpload2Meta
       
-      validate(
-        need(singledat, "Please upload a dataset to get started."
+      if(is.null(multidat)){
+        
+        validate(
+          need(singledat, "Please upload a dataset to get started."
+          )
         )
-      )
-      
-      if(endsWith(singledat$name, ".xlsx")){
-        mydat <- read_excel(singledat$datapath)
+        
+        if(endsWith(singledat$name, ".xlsx")){
+          mydat <- read_excel(singledat$datapath)
+        }
+        
+        if(endsWith(singledat$name, ".xls")){
+          mydat <- read_excel(singledat$datapath)
+        }
+        
+        if(endsWith(singledat$name, ".csv")){
+          mydat <- read_csv(singledat$datapath)
+        }
+        
+        if(endsWith(singledat$name, ".txt")){
+          mydat <- read_tsv(singledat$datapath)
+        }
+        return(mydat)
       }
-      
-      if(endsWith(singledat$name, ".xls")){
-        mydat <- read_excel(singledat$datapath)
-      }
-      
-      if(endsWith(singledat$name, ".csv")){
-        mydat <- read_csv(singledat$datapath)
-      }
-      
-      if(endsWith(singledat$name, ".txt")){
-        mydat <- read_tsv(singledat$datapath)
-      }
-      
-    }
-    return(mydat)
   })
   
   #---------------------
@@ -177,19 +176,46 @@ shinyServer <- function(input, output, session) {
     }
   })
   
-  #------------------ Classifier page -----------
-  
-  
-  
   #------------------ Quality page --------------
   
-  
+  output$data_qual_plot <- renderPlotly({
+    
+    # Account for lack of data upload to avoid error message
+    
+    validate(
+      need(featureMatrix(), "Please upload a dataset to get started."
+      )
+    )
+    
+    plot_quality_matrix(data = featureMatrix())
+   })
   
   #------------------ Matrix page ---------------
   
+  output$feat_mat_plot <- renderPlotly({
+    
+    # Account for lack of data upload to avoid error message
+    
+    validate(
+      need(featureMatrix(), "Please upload a dataset to get started."
+      )
+    )
+    
+    # Normalise matrix
+    
+    normed <- featureMatrix() %>%
+      dplyr::select(c(id, names, values)) %>%
+      group_by(id, names) %>%
+      mutate(values = normalise_feature_vector(values, method = input$inputScaler)) %>%
+      ungroup() %>%
+      drop_na()
+    
+    # Render plot
+    
+    plot_connectivity_matrix(data = normed, id_var = "id", names_var = "names", values_var = "values")
+  })
   
-  
-  #------------------ About page ----------------
+  #------------------ Classifier page -----------
   
   
   
