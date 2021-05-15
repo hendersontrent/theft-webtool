@@ -148,8 +148,7 @@ shinyServer <- function(input, output, session) {
                                 '<br><b>Timepoint:</b>', timepoint,
                                 '<br><b>Value:</b>', round(values, digits = 2)))) +
         geom_line(size = 1.05, colour = "#FFBA67") +
-        theme_bw() +
-        theme(panel.grid.minor = element_blank())
+        theme_bw()
       
       # Convert to interactive graphic
       
