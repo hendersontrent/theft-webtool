@@ -87,19 +87,20 @@ plot_connectivity_matrix <- function(data, id_var = NULL, names_var = NULL, valu
                                  text = paste('<br><b>ID 1:</b>', Var1,
                                               '<br><b>ID 2:</b>', Var2))) +
     ggplot2::geom_tile(ggplot2::aes(fill = value)) +
-    ggplot2::labs(title = "Feature value correlations between with hierarchical clustering",
-                  x = NULL,
+    ggplot2::labs(x = NULL,
                   y = NULL,
-                  fill = "Correlation Coefficient") +
+                  fill = NULL) +
     ggplot2::scale_fill_distiller(palette = "RdYlBu", limits = c(-1,1)) +
     ggplot2::theme_bw() +
     ggplot2::theme(panel.grid = ggplot2::element_blank(),
                    legend.position = "none",
-                   axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
+                   axis.text = ggplot2::element_blank())
   
   if(unique(cluster_out$Var1) > 20){
     p <- p +
       ggplot2::theme(axis.text = ggplot2::element_blank())
+  } else{
+    
   }
   
   #-------- Convert to interactive graphic --------

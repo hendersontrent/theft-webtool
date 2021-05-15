@@ -203,12 +203,7 @@ shinyServer <- function(input, output, session) {
     
     # Normalise matrix
     
-    normed <- featureMatrix() %>%
-      dplyr::select(c(id, names, values)) %>%
-      group_by(id, names) %>%
-      mutate(values = normalise_feature_vector(values, method = input$inputScaler)) %>%
-      ungroup() %>%
-      drop_na()
+    normed <- normalise_feature_frame(featureMatrix(), names_var = "names", values_var = "values", method = input$inputScaler)
     
     # Render plot
     
