@@ -35,6 +35,14 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                      column(11,
                                             h2("Initial Dataset Upload"),
                                             p("To get started, please use the widget below to upload your datafile depending on whether you have a single file with all information (e.g. a long or 'tidy' format) or a wide time series file and a corresponding metadata file (e.g. ID variables, class labels). Currently accepted formats are: .csv, .xlsx, .xls, .txt. More file types will be added soon."),
+                                            
+                                            # Feature set selection
+                                            
+                                            radioButtons("feature_set", "Select a feature set to use", 
+                                                                  choices = featuresets, selected = featuresets[1], inline = TRUE),
+                                            
+                                            # Data uploads
+                                            
                                             tabsetPanel(id = "landing_tabs",
                                               tabPanel("Single Long Datafile",
                                                        br(),
@@ -108,7 +116,9 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                             choices = all_scalers, selected = all_scalers[1], multiple = FALSE),
                                 br(),
                                 selectInput("selectID", "Select a unique time-series ID to explore further",
-                                            choices = c("None"), selected = "None", multiple = FALSE)
+                                            choices = c("None"), selected = "None", multiple = FALSE),
+                                br(),
+                                downloadButton("feature_download", "Download Calculated Feature File")
                               ),
                               mainPanel(fluidRow(
                                 column(8,

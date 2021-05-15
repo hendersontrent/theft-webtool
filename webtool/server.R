@@ -73,7 +73,7 @@ shinyServer <- function(input, output, session) {
       # Calculate features
       
       featureMatrix <- calculate_features(tmp(), id_var = input$input_id_var, time_var = input$input_time_var, 
-                                          values_var = input$input_values_var, feature_set = "catch22") %>%
+                                          values_var = input$input_values_var, feature_set = input$feature_set) %>%
         mutate(id = as.character(id))
       
       # Re-join group labels
@@ -86,6 +86,18 @@ shinyServer <- function(input, output, session) {
       return(featureMatrix)
     }
   })
+  
+  #--------------------
+  # Download calculated
+  # feature dataframe
+  #--------------------
+  
+  output$feature_download <- downloadHandler(
+    filename = "feature_calculations.csv",
+    content = function(filename){
+      write.csv(featureMatrix(), filename)
+    }
+  )
   
   #-----------------
   # ID filter update
