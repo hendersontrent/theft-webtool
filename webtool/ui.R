@@ -33,8 +33,16 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                             fluidRow(
                                      column(2),
                                      column(11,
-                                            h2("Initial Dataset Upload"),
+                                            h3("Initial Dataset Upload"),
                                             p("To get started, please use the widget below to upload your datafile depending on whether you have a single file with all information (e.g. a long or 'tidy' format) or a wide time series file and a corresponding metadata file (e.g. ID variables, class labels). Currently accepted formats are: .csv, .xlsx, .xls, .txt. More file types will be added soon."),
+                                            
+                                            # Feature set selection
+                                            
+                                            radioButtons("feature_set", "Select a feature set to use", 
+                                                                  choices = featuresets, selected = featuresets[1], inline = TRUE),
+                                            
+                                            # Data uploads
+                                            
                                             tabsetPanel(id = "landing_tabs",
                                               tabPanel("Single Long Datafile",
                                                        br(),
@@ -92,8 +100,16 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                                         )
                                                        )
                                                       )
-                                                     )
-                                                    ),
+                                                     ),
+                            fluidRow(
+                              column(2),
+                              column(11,
+                                     h3("Run Calculations"),
+                                     p("After making selections and uploading data using the controls above, click the button below to run calculations."),
+                                     actionButton("run", "Run Calculations")
+                             )
+                            )
+                           ),
                    
                    #------------------ Low dim page --------------
                    
@@ -108,7 +124,9 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                             choices = all_scalers, selected = all_scalers[1], multiple = FALSE),
                                 br(),
                                 selectInput("selectID", "Select a unique time-series ID to explore further",
-                                            choices = c("None"), selected = "None", multiple = FALSE)
+                                            choices = c("None"), selected = "None", multiple = FALSE),
+                                br(),
+                                downloadButton("feature_download", "Download Calculated Feature File")
                               ),
                               mainPanel(fluidRow(
                                 column(8,
@@ -126,14 +144,9 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                              )
                             ),
                    
-                   #------------------ Classifier page -----------
-                   
-                   tabPanel(navtab2,
-                            fluidRow(h1("Classification Performance"))),
-                   
                    #------------------ Quality page --------------
                    
-                   tabPanel(navtab3,
+                   tabPanel(navtab2,
                             fluidRow(h1("Feature Calculation Quality")),
                             sidebarLayout(
                               sidebarPanel(
@@ -141,9 +154,9 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                 p("This page visualises the quality of the calculated feature matrix by computing amounts of each data type."),
                               ),
                               mainPanel(fluidRow(
-                                column(8,
+                                column(10,
                                   h3("Data Quality Plot"),
-                                  shinycssloaders::withSpinner(plotlyOutput("data_qual_plot", height = "300px"))
+                                  shinycssloaders::withSpinner(plotlyOutput("data_qual_plot", height = "650px"))
                        )
                       )
                      )
@@ -152,7 +165,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                    
                    #------------------ Matrix page ---------------
                    
-                   tabPanel(navtab4,
+                   tabPanel(navtab3,
                             fluidRow(h1("Feature Matrix Visualisation")),
                             sidebarLayout(
                               sidebarPanel(
@@ -160,12 +173,19 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                 p("This page visualises the time series feature matrix as a 'connectivity' matrix/heatmap of correlations between each unique time series' feature vectors."),
                               ),
                               mainPanel(fluidRow(
-                                h3("Feature Matrix Correlation Plot"),
-                                shinycssloaders::withSpinner(plotlyOutput("feat_mat_plot", height = "300px"))
+                                column(10,
+                                  h3("Feature Matrix Correlation Plot"),
+                                  shinycssloaders::withSpinner(plotlyOutput("feat_mat_plot", height = "650px"))
+                               )
                               )
                              )
                             )
                    ),
+                   
+                   #------------------ Classifier page -----------
+                   
+                   tabPanel(navtab4,
+                            fluidRow(h1("Classification Performance"))),
                    
                    #------------------ About page ----------------
                    

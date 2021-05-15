@@ -49,9 +49,9 @@ for(f in r_files){
 
 navtab0 <- "HOME"
 navtab1 <- "LOW DIMENSION VISUALISATION"
-navtab2 <- "CLASSIFICATION PERFORMANCE"
-navtab3 <- "FEATURE CALCULATION QUALITY"
-navtab4 <- "FEATURE MATRIX VISUALISATION"
+navtab2 <- "FEATURE CALCULATION QUALITY"
+navtab3 <- "FEATURE MATRIX VISUALISATION"
+navtab4 <- "CLASSIFICATION PERFORMANCE"
 navtab5 <- "ABOUT"
 
 # Turn off scientific notation
@@ -61,3 +61,4 @@ options(scipen = 999)
 # Helper vectors
 
 all_scalers <- c("z-score", "Sigmoid", "RobustSigmoid", "MinMax", "MeanSubtract")
+featuresets <- c("catch22", "feasts", "tsfeatures")
