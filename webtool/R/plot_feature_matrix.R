@@ -1,0 +1,158 @@
+#' Produce a heatmap matrix of the calculated feature value vectors and each unique time series with automatic hierarchical clustering.
+#' @import dplyr
+#' @importFrom magrittr %>%
+#' @import ggplot2
+#' @import tibble
+#' @importFrom tidyr pivot_wider
+#' @importFrom tidyr pivot_longer
+#' @importFrom tidyr drop_na
+#' @importFrom reshape2 melt
+#' @importFrom stats hclust
+#' @importFrom stats dist
+#' @param data a dataframe with at least 2 columns called 'names' and 'values'
+#' @param is_normalised a Boolean as to whether the input feature values have already been scaled. Defaults to FALSE
+#' @param id_var a string specifying the ID variable to group data on (if one exists). Defaults to NULL
+#' @param method a rescaling/normalising method to apply. Defaults to 'RobustSigmoid'
+#' @return an object of class ggplot that contains the heatmap graphic
+#' @author Trent Henderson
+#' @export
+#' @examples
+#' \dontrun{
+#' library(dplyr)
+#' library(tsibbledata)
+#' d <- tsibbledata::aus_retail %>%
+#'   filter(State == "New South Wales")
+#' outs <- calculate_features(data = d, id_var = "Industry", time_var = "Month", 
+#'   values_var = "Turnover", feature_set = "all", tsfresh_cleanup = FALSE)
+#' plot_feature_matrix(outs, is_normalised = FALSE, id_var = "Industry", 
+#'   method = "RobustSigmoid")
+#' }
+#'
+
+plot_feature_matrix <- function(data, is_normalised = FALSE, id_var = NULL, method = c("z-score", "Sigmoid", "RobustSigmoid", "MinMax", "MeanSubtract")){
+  
+  # Make RobustSigmoid the default
+  
+  if(missing(method)){
+    method <- "RobustSigmoid"
+  } else{
+    method <- match.arg(method)
+  }
+  
+  expected_cols_1 <- "names"
+  expected_cols_2 <- "values"
+  the_cols <- colnames(data)
+  '%ni%' <- Negate('%in%')
+  
+  if(expected_cols_1 %ni% the_cols){
+    stop("data should contain at least two columns called 'names' and 'values'. These are automatically produced by feature calculations such as calculate_features(). Please consider running one of these first and then passing the resultant dataframe in to this function.")
+  }
+  
+  if(expected_cols_2 %ni% the_cols){
+    stop("data should contain at least two columns called 'names' and 'values'. These are automatically produced by feature calculations such as calculate_features(). Please consider running one of these first and then passing the resultant dataframe in to this function.")
+  }
+  
+  if(!is.numeric(data$values)){
+    stop("'values' column in data should be a numerical vector.")
+  }
+  
+  if(!is.null(id_var) && !is.character(id_var)){
+    stop("id_var should be a string specifying a variable in the input data that uniquely identifies each observation.")
+  }
+  
+  # Method selection
+  
+  the_methods <- c("z-score", "Sigmoid", "RobustSigmoid", "MinMax", "MeanSubtract")
+  
+  if(method %ni% the_methods){
+    stop("method should be a single selection of 'z-score', 'Sigmoid', 'RobustSigmoid', 'MinMax' or 'MeanSubtract'")
+  }
+  
+  if(length(method) > 1){
+    stop("method should be a single selection of 'z-score', 'Sigmoid', 'RobustSigmoid', 'MinMax' or 'MeanSubtract'")
+  }
+  
+  #------------- Assign ID variable ---------------
+  
+  if (is.null(id_var)){
+    stop("Data is not uniquely identifiable. Please add a unique identifier variable.")
+  }
+  
+  if(!is.null(id_var)){
+    data_id <- data %>%
+      dplyr::rename(id = dplyr::all_of(id_var))
+  }
+  
+  #------------- Normalise data -------------------
+  
+  if(is_normalised){
+    normed <- data_id
+  } else if (is_normalised == FALSE & nrow(data_id) == 22){
+    message("Not enough data to standardise feature vectors. Using raw calculated values.")
+    normed <- data_id
+  }else{
+    normed <- data_id %>%
+      dplyr::select(c(id, names, values)) %>%
+      dplyr::group_by(names) %>%
+      dplyr::mutate(values = normalise_feature_vector(values, method = method)) %>%
+      dplyr::ungroup() %>%
+      tidyr::drop_na()
+    
+    if(nrow(normed) != nrow(data_id)){
+      message("Filtered out rows containing NaNs.")
+    }
+  }
+  
+  #------------- Hierarchical clustering ----------
+  
+  dat <- normed %>%
+    tidyr::pivot_wider(id_cols = id, names_from = names, values_from = values) %>%
+    tibble::column_to_rownames(var = "id")
+  
+  # Remove any columns with all NAs to avoid whole dataframe being dropped
+  
+  dat_filtered <- dat[colSums(!is.na(dat)) > 0]
+  
+  # Drop any remaining rows with NAs
+  
+  dat_filtered <- dat_filtered %>%
+    tidyr::drop_na()
+  
+  if(nrow(dat_filtered) != nrow(dat)){
+    message("Dropped rows with NAs to enable clustering.")
+  }
+  
+  row.order <- stats::hclust(stats::dist(dat_filtered))$order # Hierarchical cluster on rows
+  col.order <- stats::hclust(stats::dist(t(dat_filtered)))$order # Hierarchical cluster on columns
+  dat_new <- dat_filtered[row.order, col.order] # Re-order matrix by cluster outputs
+  cluster_out <- reshape2::melt(as.matrix(dat_new)) %>% # Turn into dataframe
+    dplyr::rename(id = Var1,
+                  names = Var2)
+  
+  #------------- Draw graphic ---------------------
+  
+  message("Rendering graphic...")
+  
+  p <- cluster_out %>%
+    ggplot2::ggplot(ggplot2::aes(x = names, y = id, fill = value,
+                                 text = paste('<br><b>ID:</b>', id,
+                                              '<br><b>Feature:</b>', names,
+                                              '<br><b>Scaled Value:</b>', round(value, digits = 2)))) +
+    ggplot2::geom_tile() +
+    ggplot2::labs(x = "Feature",
+                  y = "Time Series") +
+    ggplot2::theme_bw() +
+    ggplot2::scale_fill_distiller(palette = "RdYlBu") +
+    ggplot2::theme(legend.position = "none",
+                   axis.text.y = ggplot2::element_blank(),
+                   axis.text.x = ggplot2::element_blank(),
+                   panel.grid = ggplot2::element_blank())
+  
+  #-------- Convert to interactive graphic --------
+  
+  p_int <- ggplotly(p, tooltip = c("text")) %>%
+    layout(legend = list(orientation = "h", x = 0, y = -0.2)) %>%
+    config(displayModeBar = FALSE)
+  
+  return(p_int)
+}

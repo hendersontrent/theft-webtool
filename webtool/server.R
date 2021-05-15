@@ -192,6 +192,8 @@ shinyServer <- function(input, output, session) {
   
   #------------------ Matrix page ---------------
   
+  # ID x Feature plot
+  
   output$feat_mat_plot <- renderPlotly({
     
     # Account for lack of data upload to avoid error message
@@ -203,11 +205,27 @@ shinyServer <- function(input, output, session) {
     
     # Normalise matrix
     
-    normed <- normalise_feature_frame(featureMatrix(), names_var = "names", values_var = "values", method = input$inputScaler)
+    normed <- normalise_feature_frame(featureMatrix(), names_var = "names", values_var = "values", method = input$inputScaler2)
     
     # Render plot
     
     plot_connectivity_matrix(data = normed, id_var = "id", names_var = "names", values_var = "values")
+  })
+  
+  # Feature x Feature plot
+  
+  output$id_by_feat_plot <- renderPlotly({
+    
+    # Account for lack of data upload to avoid error message
+    
+    validate(
+      need(featureMatrix(), "Please upload a dataset to get started."
+      )
+    )
+    
+    # Render plot
+    
+    plot_feature_matrix(data = featureMatrix(), id_var = "id", is_normalised = FALSE, method = input$inputScaler2)
   })
   
   #------------------ Classifier page -----------

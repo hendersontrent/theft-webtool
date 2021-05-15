@@ -85,7 +85,8 @@ plot_connectivity_matrix <- function(data, id_var = NULL, names_var = NULL, valu
   p <- cluster_out %>%
     ggplot2::ggplot(ggplot2::aes(x = Var1, y = Var2,
                                  text = paste('<br><b>ID 1:</b>', Var1,
-                                              '<br><b>ID 2:</b>', Var2))) +
+                                              '<br><b>ID 2:</b>', Var2,
+                                              '<br><b>Correlation:</b>', round(value, digits = 2)))) +
     ggplot2::geom_tile(ggplot2::aes(fill = value)) +
     ggplot2::labs(x = NULL,
                   y = NULL,
@@ -94,14 +95,8 @@ plot_connectivity_matrix <- function(data, id_var = NULL, names_var = NULL, valu
     ggplot2::theme_bw() +
     ggplot2::theme(panel.grid = ggplot2::element_blank(),
                    legend.position = "none",
-                   axis.text = ggplot2::element_blank())
-  
-  if(unique(cluster_out$Var1) > 20){
-    p <- p +
-      ggplot2::theme(axis.text = ggplot2::element_blank())
-  } else{
-    
-  }
+                   axis.text.x = ggplot2::element_blank(),
+                   axis.text.y = ggplot2::element_blank())
   
   #-------- Convert to interactive graphic --------
   

@@ -170,22 +170,32 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                             sidebarLayout(
                               sidebarPanel(
                                 h2("Page Information"),
-                                p("This page visualises the time series feature matrix as a 'connectivity' matrix/heatmap of correlations between each unique time series' feature vectors."),
+                                p("This page visualises the time series feature matrix as an array of different heatmap data visualisations. All data is scaled and hierarchically-clustered prior to plotting."),
+                                br(),
+                                selectInput("inputScaler2", "Select a rescaling function to apply prior to performing correlations, clustering, and plotting.",
+                                            choices = all_scalers, selected = all_scalers[2], multiple = FALSE)
                               ),
                               mainPanel(fluidRow(
                                 column(10,
-                                  h3("Feature Matrix Correlation Plot"),
-                                  shinycssloaders::withSpinner(plotlyOutput("feat_mat_plot", height = "650px"))
+                                  h3("Unique ID x Unique ID Correlation Matrix"),
+                                  shinycssloaders::withSpinner(plotlyOutput("feat_mat_plot", height = "500px"))
                                )
-                              )
-                             )
-                            )
+                              ),
+                              fluidRow(
+                                column(10,
+                                       h3("Unique ID x Feature Cluster Matrix"),
+                                       shinycssloaders::withSpinner(plotlyOutput("id_by_feat_plot", height = "500px"))
+                       )
+                      )
+                     )
+                    )
                    ),
                    
                    #------------------ Classifier page -----------
                    
                    tabPanel(navtab4,
-                            fluidRow(h1("Classification Performance"))),
+                            fluidRow(h1("Classification Performance")),
+                            fluidRow(p("Classification functionality coming soon."))),
                    
                    #------------------ About page ----------------
                    
