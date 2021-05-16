@@ -13,6 +13,8 @@
 #' @param group_var a string specifying the grouping variable that the data aggregates to. Defaults to NULL
 #' @param method a rescaling/normalising method to apply. Defaults to 'RobustSigmoid'
 #' @param plot a Boolean as to whether a bivariate plot should be returned or the calculation dataframe. Defaults to TRUE
+#' @param highlight a binary of whether to call out a specific ID on the plot or not
+#' @param id_filt the specific ID to filter the plot on
 #' @return if plot = TRUE, returns an object of class plotly, if plot = FALSE returns an object of class dataframe with PCA results
 #' @author Trent Henderson
 #' @export
@@ -29,7 +31,8 @@
 #' }
 #'
 
-plot_low_dimension <- function(data, is_normalised = FALSE, id_var = NULL, group_var = NULL, method = c("z-score", "Sigmoid", "RobustSigmoid", "MinMax", "MeanSubtract"), plot = TRUE){
+plot_low_dimension <- function(data, is_normalised = FALSE, id_var = NULL, group_var = NULL, method = c("z-score", "Sigmoid", "RobustSigmoid", "MinMax", "MeanSubtract"), 
+                               plot = TRUE, highlight = c("No", "Yes"), id_filt = NULL){
   
   # Make RobustSigmoid the default
   
@@ -147,9 +150,7 @@ plot_low_dimension <- function(data, is_normalised = FALSE, id_var = NULL, group
   
   #------------- Output & graphic -----------------
   
-  if(isTRUE(plot)){
-    
-    if(!is.null(group_var)){
+  if(!is.null(group_var)){
       
       # Retrieve groups
       
@@ -176,65 +177,118 @@ plot_low_dimension <- function(data, is_normalised = FALSE, id_var = NULL, group
       
       # Draw plot
       
-      p <- fits %>%
-        mutate(group_id = as.factor(group_id)) %>%
-        ggplot2::ggplot(ggplot2::aes(x = .fittedPC1, y = .fittedPC2, colour = group_id,
-                                     text = paste('<b>ID:</b>', id,
-                                                  '<br><b>Group:</b>', group_id,
-                                                  '<br><b>PC1 Value:</b>', round(.fittedPC1, digits = 2),
-                                                  '<br><b>PC2 Value:</b>', round(.fittedPC2, digits = 2))))
-      
-      if(nrow(fits) > 200){
+      if(highlight == "No"){
+        p <- fits %>%
+          mutate(group_id = as.factor(group_id)) %>%
+          ggplot2::ggplot(ggplot2::aes(x = .fittedPC1, y = .fittedPC2, colour = group_id,
+                                       text = paste('<b>ID:</b>', id,
+                                                    '<br><b>Group:</b>', group_id,
+                                                    '<br><b>PC1 Value:</b>', round(.fittedPC1, digits = 2),
+                                                    '<br><b>PC2 Value:</b>', round(.fittedPC2, digits = 2))))
+        
+        if(nrow(fits) > 200){
+          p <- p +
+            ggplot2::geom_point(size = 1.5)
+        } else{
+          p <- p +
+            ggplot2::geom_point(size = 2.25)
+        }
         p <- p +
-          ggplot2::geom_point(size = 1.5)
-      } else{
-        p <- p +
-          ggplot2::geom_point(size = 2.25)
+          ggplot2::labs(x = paste0("PC 1"," (",eigen_pc1,")"),
+                        y = paste0("PC 2"," (",eigen_pc2,")"),
+                        colour = "Group") +
+          ggplot2::scale_color_manual(values = available_colours) +
+          ggplot2::theme_bw() +
+          ggplot2::theme(panel.grid.major = ggplot2::element_blank(),
+                         panel.grid.minor = ggplot2::element_blank(),
+                         legend.position = "bottom")
       }
-      p <- p +
-        ggplot2::labs(x = paste0("PC 1"," (",eigen_pc1,")"),
-                      y = paste0("PC 2"," (",eigen_pc2,")"),
-                      colour = "Group") +
-        ggplot2::scale_color_manual(values = available_colours) +
-        ggplot2::theme_bw() +
-        ggplot2::theme(panel.grid.major = ggplot2::element_blank(),
-                       panel.grid.minor = ggplot2::element_blank(),
-                       legend.position = "bottom")
+      
+      if(highlight == "Yes"){
+        
+        fits <- fits %>%
+          mutate(group_id = as.factor(group_id))
+        
+        fitsfilt <- fits %>%
+          mutate(id = as.character(id)) %>%
+          filter(id != as.character(id_filt))
+        
+        idfilt <- fits %>%
+          mutate(id = as.character(id)) %>%
+          filter(id == as.character(id_filt))
+        
+        p <- fitsfilt %>%
+          ggplot2::ggplot(ggplot2::aes(x = .fittedPC1, y = .fittedPC2, colour = group_id,
+                                       text = paste('<b>ID:</b>', id,
+                                                    '<br><b>Group:</b>', group_id,
+                                                    '<br><b>PC1 Value:</b>', round(.fittedPC1, digits = 2),
+                                                    '<br><b>PC2 Value:</b>', round(.fittedPC2, digits = 2)))) +
+          ggplot2::geom_point(size = 1.5, alpha = 0.3) +
+          ggplot2:::geom_point(data = idfilt, size = 4) +
+          ggplot2::labs(x = paste0("PC 1"," (",eigen_pc1,")"),
+                        y = paste0("PC 2"," (",eigen_pc2,")"),
+                        colour = "Group") +
+          ggplot2::scale_color_manual(values = available_colours) +
+          ggplot2::theme_bw() +
+          ggplot2::theme(panel.grid.major = ggplot2::element_blank(),
+                         panel.grid.minor = ggplot2::element_blank(),
+                         legend.position = "bottom")
+      }
     }
     
     if(is.null(group_var)){
-      
-      # Draw plot
       
       fits <- pca_fit %>%
         broom::augment(dat_filtered) %>%
         dplyr::rename(id = `.rownames`) %>%
         dplyr::mutate(id = as.factor(id))
       
-      p <- fits %>%
-        ggplot2::ggplot(ggplot2::aes(x = .fittedPC1, y = .fittedPC2, group = 1,
-                                     text = paste('<b>ID:</b>', id,
-                                                  '<br><b>PC1 Value:</b>', round(.fittedPC1, digits = 2),
-                                                  '<br><b>PC2 Value:</b>', round(.fittedPC2, digits = 2))))
-      
-      if(nrow(fits) > 200){
+      if(highlight == "No"){
+        
+        p <- fits %>%
+          ggplot2::ggplot(ggplot2::aes(x = .fittedPC1, y = .fittedPC2, group = 1,
+                                       text = paste('<b>ID:</b>', id,
+                                                    '<br><b>PC1 Value:</b>', round(.fittedPC1, digits = 2),
+                                                    '<br><b>PC2 Value:</b>', round(.fittedPC2, digits = 2))))
+        
+        if(nrow(fits) > 200){
+          p <- p +
+            ggplot2::geom_point(size = 1.5, colour = "#E494D3")
+        } else{
+          p <- p +
+            ggplot2::geom_point(size = 2, colour = "#E494D3")
+        }
         p <- p +
-          ggplot2::geom_point(size = 1.5, colour = "black")
-      } else{
-        p <- p +
-          ggplot2::geom_point(size = 2, colour = "black")
+          ggplot2::labs(x = paste0("PC 1"," (",eigen_pc1,")"),
+                        y = paste0("PC 2"," (",eigen_pc2,")")) +
+          ggplot2::theme_bw() +
+          ggplot2::theme(panel.grid.major = ggplot2::element_blank(),
+                         panel.grid.minor = ggplot2::element_blank())
       }
-      p <- p +
-        ggplot2::labs(x = paste0("PC 1"," (",eigen_pc1,")"),
-                      y = paste0("PC 2"," (",eigen_pc2,")")) +
-        ggplot2::theme_bw() +
-        ggplot2::theme(panel.grid.major = ggplot2::element_blank(),
-                       panel.grid.minor = ggplot2::element_blank())
-    }
-  } else{
-    p <- pca_fit %>%
-      broom::augment(dat_filtered) %>%
-      dplyr::rename(id = `.rownames`)
+      
+      if(highlight == "Yes"){
+        
+        fitsfilt <- fits %>%
+          mutate(id = as.character(id)) %>%
+          filter(id != as.character(id_filt))
+        
+        idfilt <- fits %>%
+          mutate(id = as.character(id)) %>%
+          filter(id == as.character(id_filt))
+        
+        p <- fitsfilt %>%
+          ggplot2::ggplot(ggplot2::aes(x = .fittedPC1, y = .fittedPC2, group = 1,
+                                       text = paste('<b>ID:</b>', id,
+                                                    '<br><b>PC1 Value:</b>', round(.fittedPC1, digits = 2),
+                                                    '<br><b>PC2 Value:</b>', round(.fittedPC2, digits = 2)))) +
+          ggplot2::geom_point(size = 1.5, alpha = 0.3, colour = "#E494D3") +
+          ggplot2:::geom_point(data = idfilt, size = 4, colour = "#E494D3") +
+          ggplot2::labs(x = paste0("PC 1"," (",eigen_pc1,")"),
+                        y = paste0("PC 2"," (",eigen_pc2,")")) +
+          ggplot2::theme_bw() +
+          ggplot2::theme(panel.grid.major = ggplot2::element_blank(),
+                         panel.grid.minor = ggplot2::element_blank())
+      }
   }
   
   #-------- Convert to interactive graphic --------
