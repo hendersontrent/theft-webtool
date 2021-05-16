@@ -62,3 +62,4 @@ options(scipen = 999)
 
 all_scalers <- c("z-score", "Sigmoid", "RobustSigmoid", "MinMax", "MeanSubtract")
 featuresets <- c("catch22", "feasts", "tsfeatures")
+binaries <- c("No", "Yes")

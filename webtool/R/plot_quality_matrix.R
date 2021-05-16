@@ -91,8 +91,15 @@ plot_quality_matrix <- function(data){
     ggplot2::scale_fill_manual(values = my_palette) +
     ggplot2::theme_bw() +
     ggplot2::theme(panel.grid = ggplot2::element_blank(),
-                   legend.position = "none",
-                   axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
+                   legend.position = "none")
+  
+  if(unique(tmp1$names) == 22){
+    p <- p +
+      ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
+  } else{
+    p <- p +
+      ggplot2::theme(axis.text.x = ggplot2::element_blank())
+  }
   
   #-------- Convert to interactive graphic --------
   

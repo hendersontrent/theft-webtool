@@ -129,11 +129,11 @@ shinyServer <- function(input, output, session) {
     if(str_detect(input$input_group_var, " ")){
       
       plot_low_dimension(featureMatrix(), is_normalised = FALSE, id_var = "id", group_var = NULL, 
-                         method = input$inputScaler, plot = TRUE)
+                         method = input$inputScaler, plot = TRUE, highlight = input$pca_highlighter, id_filt = input$selectID)
     } else{
       
       plot_low_dimension(featureMatrix(), is_normalised = FALSE, id_var = "id", group_var = "group", 
-                         method = input$inputScaler, plot = TRUE)
+                         method = input$inputScaler, plot = TRUE, highlight = input$pca_highlighter, id_filt = input$selectID)
     }
   })
   

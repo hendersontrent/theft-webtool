@@ -26,3 +26,5 @@ There are numerous resources associated with the computations, methodology, and 
 * B.D. Fulcher, M.A. Little, N.S. Jones. [Highly comparative time-series analysis: the empirical structure of time series and their methods](https://royalsocietypublishing.org/doi/full/10.1098/rsif.2013.0048). J. Roy. Soc. Interface 10, 83 (2013).
 * [`catch22`](https://github.com/chlubba/catch22) software toolbox in C
 * Lubba, C. H. et al. [catch22: CAnonical Time-series CHaracteristics](https://link.springer.com/article/10.1007/s10618-019-00647-x). Data Mining and Knowledge Discovery, 33 (2019)
+* [`feasts`](https://feasts.tidyverts.org) software toolbox - Mitchell O'Hara-Wild, Rob Hyndman and Earo Wang (2021). feasts: Feature Extraction and Statistics for Time Series. R package version 0.2.1. https://CRAN.R-project.org/package=feasts
+* [`tsfeatures`](https://pkg.robjhyndman.com/tsfeatures/) software toolbox - Rob Hyndman, Yanfei Kang, Pablo Montero-Manso, Thiyanga Talagala, Earo Wang, Yangzhuoran Yang and Mitchell O'Hara-Wild (2020). tsfeatures: Time Series Feature Extraction. R package version 1.0.2. https://CRAN.R-project.org/package=tsfeatures
