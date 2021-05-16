@@ -34,7 +34,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                      column(2),
                                      column(11,
                                             h3("Initial Dataset Upload"),
-                                            p("To get started, please use the widget below to upload your datafile depending on whether you have a single file with all information (e.g. a long or 'tidy' format) or a wide time series file and a corresponding metadata file (e.g. ID variables, class labels). Currently accepted formats are: .csv, .xlsx, .xls, .txt. More file types will be added soon."),
+                                            p("To get started, please use the widget below to upload your datafile depending on whether you have a single file with all information (e.g. a long or 'tidy' format) or a wide time series file and a corresponding metadata file (e.g. ID variables, class labels). Currently accepted formats are: .csv, .xlsx, .xls, .txt. More file types will be added soon. Please ensure there are no spaces in your variable names prior to uploading."),
                                             
                                             # Feature set selection
                                             
@@ -74,6 +74,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                                        ),
                                               tabPanel("Wide Datafile + Metadata File",
                                                        br(),
+                                                       p("Please ensure the number of rows in your metadata file corresponds to the number of rows in the time-series data. Note that the data format expected in the time-series file is only such that each column is a timepoint."),
                                                        fluidRow(
                                                          column(2,
                                                            fileInput("userUpload2", HTML("Upload your time series file"),
