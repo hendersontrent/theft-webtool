@@ -87,10 +87,7 @@ plot_feature_matrix <- function(data, is_normalised = FALSE, id_var = NULL, meth
   
   if(is_normalised){
     normed <- data_id
-  } else if (is_normalised == FALSE & nrow(data_id) == 22){
-    message("Not enough data to standardise feature vectors. Using raw calculated values.")
-    normed <- data_id
-  }else{
+  } else{
     normed <- data_id %>%
       dplyr::select(c(id, names, values)) %>%
       dplyr::group_by(names) %>%
