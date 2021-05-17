@@ -15,13 +15,11 @@ shinyServer <- function(input, output, session) {
   
   tmp <- eventReactive(input$run, {
     
-    singledat <- input$userUpload
-    multidat <- input$userUpload2
-    multidat_meta <- input$userUpload2Meta
-    
-    # Single datafile
+    if(!is.null(input$userUpload) && !is.null(input$userUpload2)){
       
-      if(!is.null(singledat)){
+    } else if(!is.null(input$userUpload) && is.null(input$userUpload2)){
+        
+        singledat <- input$userUpload
         
         validate(
           need(singledat, "Please upload a dataset to get started."
@@ -44,77 +42,83 @@ shinyServer <- function(input, output, session) {
           mydat <- read_tsv(singledat$datapath)
         }
         return(mydat)
-      }
-    
-    # Wide + Metadata
-    
-    if(!is.null(multidat) & !is.null(multidat_meta)){
+       } else if(!is.null(input$userUpload2) && !is.null(input$userUpload2Meta) && is.null(input$userUpload)){
+         
+         multidat <- input$userUpload2
+         multidat_meta <- input$userUpload2Meta
       
-      validate(
-        need(multidat, "Please upload a dataset to get started."
-        ),
-        need(multidat_meta, "Please upload a dataset to get started."
+        validate(
+          need(multidat, "Please upload a dataset to get started."
+          ),
+          need(multidat_meta, "Please upload a dataset to get started."
+          )
         )
-      )
       
-      # Data
-      
-      if(endsWith(multidat$name, ".xlsx")){
-        widedat <- read_excel(multidat$datapath)
-      }
-      
-      if(endsWith(multidat$name, ".xls")){
-        widedat <- read_excel(multidat$datapath)
-      }
-      
-      if(endsWith(multidat$name, ".csv")){
-        widedat <- read_csv(multidat$datapath)
-      }
-      
-      if(endsWith(multidat$name, ".txt")){
-        widedat <- read_tsv(multidat$datapath)
-      }
-      
-      widedat <- widedat %>%
-        dplyr::select(-c(X1))
-      
-      # Metadata
-      
-      if(endsWith(multidat$name, ".xlsx")){
-        metadat <- read_excel(multidat$datapath)
-      }
-      
-      if(endsWith(multidat$name, ".xls")){
-        metadat <- read_excel(multidat$datapath)
-      }
-      
-      if(endsWith(multidat$name, ".csv")){
-        metadat <- read_csv(multidat$datapath)
-      }
-      
-      if(endsWith(multidat$name, ".txt")){
-        metadat <- read_tsv(multidat$datapath)
-      }
-      
-      # Merge
-      
-      if(nrow(widedat) != nrow(metadat)){
-        return()
-      } else{
+        # Data
+        
+        if(endsWith(multidat$name, ".xlsx")){
+          widedat <- read_excel(multidat$datapath)
+        }
+        
+        if(endsWith(multidat$name, ".xls")){
+          widedat <- read_excel(multidat$datapath)
+        }
+        
+        if(endsWith(multidat$name, ".csv")){
+          widedat <- read_csv(multidat$datapath)
+        }
+        
+        if(endsWith(multidat$name, ".txt")){
+          widedat <- read_tsv(multidat$datapath)
+        }
+        
+        widedat <- widedat %>%
+          dplyr::select(-c(X1))
+        
+        # Metadata
+        
+        if(endsWith(multidat_meta$name, ".xlsx")){
+          metadat <- read_excel(multidat_meta$datapath)
+        }
+        
+        if(endsWith(multidat_meta$name, ".xls")){
+          metadat <- read_excel(multidat_meta$datapath)
+        }
+        
+        if(endsWith(multidat_meta$name, ".csv")){
+          metadat <- read_csv(multidat_meta$datapath)
+        }
+        
+        if(endsWith(multidat_meta$name, ".txt")){
+          metadat <- read_tsv(multidat_meta$datapath)
+        }
+        
+        metadat <- metadat %>%
+          dplyr::select(-c(X1))
+        
+        # Merge
+        
         mydat <- widedat %>%
           cbind(metadat)
+          
+        drop <- c("X1")
+        mydat <- mydat[,!(names(mydat) %in% drop)]
+          
         if(str_detect(input$input_group_var_multi, " ")){
           mydat <- mydat %>%
             rename(id = all_of(input$input_id_var_multi)) %>%
-            pivot_longer(!id, names_to = "timepoint", values_to = "values")
-        } else{
+            pivot_longer(!id, names_to = "timepoint", values_to = "values") %>%
+            mutate(timepoint = as.numeric(timepoint))
+          } else{
           mydat <- mydat %>%
             rename(id = all_of(input$input_id_var_multi),
                    group = all_of(input$input_group_var_multi)) %>%
-            pivot_longer(!c(id, group), names_to = "timepoint", values_to = "values")
-        }
+            pivot_longer(!c(id, group), names_to = "timepoint", values_to = "values") %>%
+            mutate(timepoint = as.numeric(timepoint))
+          }
         return(mydat)
-      }
+       } else{
+      
     }
   })
   
@@ -124,12 +128,13 @@ shinyServer <- function(input, output, session) {
   
   featureMatrix <- reactive({
     
-    singledat2 <- input$userUpload
-    multidat2 <- input$userUpload2
-    multidat_meta2 <- input$userUpload2Meta
+    validate(
+      need(tmp(), "Please upload a dataset to get started."
+      )
+    )
     
-    if(!is.null(singledat2) & is.null(multidat2)){
-      if(str_detect(input$input_id_var, " ") | str_detect(input$input_time_var, " ") | str_detect(input$input_values_var, " ")){
+    if(!is.null(input$userUpload) && is.null(input$userUpload2)){
+      if(str_detect(input$input_id_var, " ") || str_detect(input$input_time_var, " ") || str_detect(input$input_values_var, " ")){
         
       } else {
         
@@ -160,7 +165,7 @@ shinyServer <- function(input, output, session) {
         }
         return(featureMatrix)
       }
-    } else{
+    } else if(is.null(input$userUpload) && !is.null(input$userUpload2)){
       
       if(str_detect(input$input_id_var_multi, " ")){
         
@@ -179,8 +184,8 @@ shinyServer <- function(input, output, session) {
         
         # Calculate features
         
-        featureMatrix <- calculate_features(tmp(), id_var = input$input_id_var_multi, time_var = timepoint, 
-                                            values_var = values, feature_set = input$feature_set) %>%
+        featureMatrix <- calculate_features(tmp(), id_var = "id", time_var = "timepoint", 
+                                            values_var = "values", feature_set = input$feature_set) %>%
           mutate(id = as.character(id))
         
         # Re-join group labels
@@ -191,6 +196,8 @@ shinyServer <- function(input, output, session) {
         }
         return(featureMatrix)
       }
+    } else{
+      
     }
   })
   
