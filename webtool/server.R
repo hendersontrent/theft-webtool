@@ -163,7 +163,7 @@ shinyServer <- function(input, output, session) {
         }
         return(featureMatrix)
       }
-    } else{
+    } else if(is.null(input$userUpload) && !is.null(input$userUpload2)){
       
       if(str_detect(input$input_id_var_multi, " ")){
         
@@ -183,7 +183,7 @@ shinyServer <- function(input, output, session) {
         # Calculate features
         
         featureMatrix <- calculate_features(tmp(), id_var = "id", time_var = "timepoint", 
-                                            values_var = values, feature_set = input$feature_set) %>%
+                                            values_var = "values", feature_set = input$feature_set) %>%
           mutate(id = as.character(id))
         
         # Re-join group labels
@@ -194,6 +194,8 @@ shinyServer <- function(input, output, session) {
         }
         return(featureMatrix)
       }
+    } else{
+      
     }
   })
   
