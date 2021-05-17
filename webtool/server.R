@@ -15,13 +15,15 @@ shinyServer <- function(input, output, session) {
   
   tmp <- eventReactive(input$run, {
     
-    singledat <- input$userUpload
-    multidat <- input$userUpload2
-    multidat_meta <- input$userUpload2Meta
-    
     # Single datafile
+    
+    if(!is.null(input$userUpload) & !is.null(input$userUpload2)){
+      return()
+    }
       
-      if(!is.null(singledat)){
+      if(!is.null(input$userUpload) & is.null(input$userUpload2)){
+        
+        singledat <- input$userUpload
         
         validate(
           need(singledat, "Please upload a dataset to get started."
@@ -43,12 +45,14 @@ shinyServer <- function(input, output, session) {
         if(endsWith(singledat$name, ".txt")){
           mydat <- read_tsv(singledat$datapath)
         }
-        return(mydat)
       }
     
     # Wide + Metadata
     
-    if(!is.null(multidat) & !is.null(multidat_meta)){
+    if(!is.null(input$userUpload2) & !is.null(input$userUpload2Meta) & is.null(input$userUpload)){
+      
+      multidat <- input$userUpload2
+      multidat_meta <- input$userUpload2Meta
       
       validate(
         need(multidat, "Please upload a dataset to get started."
@@ -101,28 +105,24 @@ shinyServer <- function(input, output, session) {
       
       # Merge
       
-      if(nrow(widedat) != nrow(metadat)){
-        return()
-      } else{
-        mydat <- widedat %>%
+      mydat <- widedat %>%
           cbind(metadat)
         
-        drop <- c("X1")
-        mydat <- mydat[,!(names(mydat) %in% drop)]
+      drop <- c("X1")
+      mydat <- mydat[,!(names(mydat) %in% drop)]
         
-        if(str_detect(input$input_group_var_multi, " ")){
-          mydat <- mydat %>%
-            rename(id = all_of(input$input_id_var_multi)) %>%
-            pivot_longer(!id, names_to = "timepoint", values_to = "values")
+      if(str_detect(input$input_group_var_multi, " ")){
+        mydat <- mydat %>%
+          rename(id = all_of(input$input_id_var_multi)) %>%
+          pivot_longer(!id, names_to = "timepoint", values_to = "values")
         } else{
-          mydat <- mydat %>%
-            rename(id = all_of(input$input_id_var_multi),
-                   group = all_of(input$input_group_var_multi)) %>%
-            pivot_longer(!c(id, group), names_to = "timepoint", values_to = "values")
-        }
-        return(mydat)
+        mydat <- mydat %>%
+          rename(id = all_of(input$input_id_var_multi),
+                 group = all_of(input$input_group_var_multi)) %>%
+          pivot_longer(!c(id, group), names_to = "timepoint", values_to = "values")
       }
     }
+    return(mydat)
   })
   
   #---------------------
