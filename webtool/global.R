@@ -20,7 +20,6 @@ library(stats)
 library(scales)
 library(broom)
 library(Rcatch22)
-#library(theft) # Manual implementation for now until on CRAN
 library(readxl)
 library(foreign)
 library(plotly)
@@ -28,6 +27,7 @@ library(shinyWidgets)
 library(shinycssloaders)
 library(feasts)
 library(tsfeatures)
+library(Rtsne)
 
 # Load in any HTML imports
 
@@ -63,3 +63,4 @@ options(scipen = 999)
 all_scalers <- c("z-score", "Sigmoid", "RobustSigmoid", "MinMax", "MeanSubtract")
 featuresets <- c("catch22", "feasts", "tsfeatures")
 binaries <- c("No", "Yes")
+lowdims <- c("PCA", "t-SNE")

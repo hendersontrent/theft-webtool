@@ -15,7 +15,7 @@ More input formats are continuously being added. Please check back soon for more
 
 ### Who made it?
 
-This application was developed by [Trent Henderson](https://twitter.com/trentlikesstats) with input and guidance from [Ben Fulcher](http://www.benfulcher.com) - both researchers in the [Dynamics and Neural Systems Group](https://dynamicsandneuralsystems.github.io) at The University of Sydney, School of Physics. Please send any conceptual or general questions to Trent via [email](then6675@sydney.edu.au) or Ben via [email](ben.fulcher@sydney.edu.au). If you identify an issue with the application itself, please log an issue at the [GitHub repository](https://github.com/hendersontrent/theft-webtool/issues).
+This application was developed by [Trent Henderson](https://twitter.com/trentlikesstats) with conceptual guidance from [Ben Fulcher](http://www.benfulcher.com) - both researchers in the [Dynamics and Neural Systems Group](https://dynamicsandneuralsystems.github.io) in the School of Physics at The University of Sydney. Please send any conceptual or general questions to Trent via [email](then6675@sydney.edu.au) or Ben via [email](ben.fulcher@sydney.edu.au). If you identify an issue with the application itself, please log an issue at the [GitHub repository](https://github.com/hendersontrent/theft-webtool/issues).
 
 ### Where can I read more?
 

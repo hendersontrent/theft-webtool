@@ -3,6 +3,7 @@
 #' @importFrom magrittr %>%
 #' @import ggplot2
 #' @import tibble
+#' @import Rtsne
 #' @importFrom tidyr drop_na
 #' @importFrom broom augment
 #' @importFrom broom tidy
@@ -15,24 +16,15 @@
 #' @param plot a Boolean as to whether a bivariate plot should be returned or the calculation dataframe. Defaults to TRUE
 #' @param highlight a binary of whether to call out a specific ID on the plot or not
 #' @param id_filt the specific ID to filter the plot on
-#' @return if plot = TRUE, returns an object of class plotly, if plot = FALSE returns an object of class dataframe with PCA results
+#' @param low_dim_method the low dimensional embedding method to use
+#' @param perplexity the perplexity hyperparameter to use if t-SNE algorithm is selected. Defaults to 30
+#' @return plotly object
 #' @author Trent Henderson
 #' @export
-#' @examples
-#' \dontrun{
-#' library(dplyr)
-#' library(tsibbledata)
-#' d <- tsibbledata::aus_retail %>%
-#'   filter(State == "New South Wales")
-#' outs <- calculate_features(data = d, id_var = "Industry", time_var = "Month", 
-#'   values_var = "Turnover", feature_set = "all", tsfresh_cleanup = FALSE)
-#' plot_low_dimension(outs, is_normalised = FALSE, id_var = "Industry", 
-#'   group_var = NULL, method = "RobustSigmoid")
-#' }
 #'
 
 plot_low_dimension <- function(data, is_normalised = FALSE, id_var = NULL, group_var = NULL, method = c("z-score", "Sigmoid", "RobustSigmoid", "MinMax", "MeanSubtract"), 
-                               plot = TRUE, highlight = c("No", "Yes"), id_filt = NULL){
+                               plot = TRUE, highlight = c("No", "Yes"), id_filt = NULL, low_dim_method = c("PCA", "t-SNE"), perplexity = 30){
   
   # Make RobustSigmoid the default
   
@@ -124,171 +116,272 @@ plot_low_dimension <- function(data, is_normalised = FALSE, id_var = NULL, group
   dat_filtered <- dat_filtered %>%
     tidyr::drop_na()
   
-  # PCA calculation
-  
-  set.seed(123)
-  
-  pca_fit <- dat_filtered %>%
-    stats::prcomp(scale = FALSE)
-  
-  # Retrieve eigenvalues and tidy up variance explained for plotting
-  
-  eigens <- pca_fit %>%
-    broom::tidy(matrix = "eigenvalues") %>%
-    dplyr::filter(PC %in% c(1,2)) %>% # Filter to just the 2 going in the plot
-    dplyr::select(c(PC, percent)) %>%
-    dplyr::mutate(percent = round(percent*100), digits = 1)
-  
-  eigen_pc1 <- eigens %>%
-    dplyr::filter(PC == 1)
-  
-  eigen_pc2 <- eigens %>%
-    dplyr::filter(PC == 2)
-  
-  eigen_pc1 <- paste0(eigen_pc1$percent,"%")
-  eigen_pc2 <- paste0(eigen_pc2$percent,"%")
+  if(low_dim_method == "PCA"){
+    
+    # PCA calculation
+    
+    set.seed(123)
+    
+    fits <- dat_filtered %>%
+      stats::prcomp(scale = FALSE)
+    
+    # Retrieve eigenvalues and tidy up variance explained for plotting
+    
+    eigens <- fits %>%
+      broom::tidy(matrix = "eigenvalues") %>%
+      dplyr::filter(PC %in% c(1,2)) %>% # Filter to just the 2 going in the plot
+      dplyr::select(c(PC, percent)) %>%
+      dplyr::mutate(percent = round(percent*100), digits = 1)
+    
+    eigen_pc1 <- eigens %>%
+      dplyr::filter(PC == 1)
+    
+    eigen_pc2 <- eigens %>%
+      dplyr::filter(PC == 2)
+    
+    eigen_pc1 <- paste0(eigen_pc1$percent,"%")
+    eigen_pc2 <- paste0(eigen_pc2$percent,"%")
+  } else{
+    
+    # tSNE calculation
+    
+    set.seed(123)
+    
+    tsneOut <- Rtsne::Rtsne(as.matrix(dat_filtered), perplexity = perplexity, max_iter = 5000, dims = 2,
+                            check_duplicates = FALSE)
+    
+    # Retrieve 2-dimensional embedding and add in unique IDs
+    
+    id_ref <- dat_filtered %>%
+      tibble::rownames_to_column(var = "id") %>%
+      dplyr::select(c(id))
+    
+    fits <- data.frame(.fitted1 = tsneOut$Y[,1],
+                       .fitted2 = tsneOut$Y[,2]) %>%
+      dplyr::mutate(id = id_ref$id)
+  }
   
   #------------- Output & graphic -----------------
   
   if(!is.null(group_var)){
-      
-      # Retrieve groups
-      
-      fits <- pca_fit %>%
+    
+    # Retrieve groups
+    
+    if(low_dim_method == "PCA"){
+      fits <- fits %>%
         broom::augment(dat_filtered) %>%
         dplyr::rename(id = `.rownames`) %>%
-        dplyr::mutate(id = as.factor(id))
-      
-      groups <- data_id %>%
-        dplyr::rename(group_id = dplyr::all_of(group_var)) %>%
-        dplyr::group_by(id, group_id) %>%
-        dplyr::summarise(counter = dplyr::n()) %>%
-        dplyr::ungroup() %>%
-        dplyr::select(-c(counter)) %>%
-        dplyr::mutate(id = as.factor(id))
-      
+        dplyr::mutate(id = as.factor(id)) %>%
+        rename(.fitted1 = .fittedPC1,
+               .fitted2 = .fittedPC2)
+    } else{
       fits <- fits %>%
-        dplyr::inner_join(groups, by = c("id" = "id"))
+        dplyr::mutate(id = as.factor(id))
+    }
+    
+    groups <- data_id %>%
+      dplyr::rename(group_id = dplyr::all_of(group_var)) %>%
+      dplyr::group_by(id, group_id) %>%
+      dplyr::summarise(counter = dplyr::n()) %>%
+      dplyr::ungroup() %>%
+      dplyr::select(-c(counter)) %>%
+      dplyr::mutate(id = as.factor(id))
+    
+    fits <- fits %>%
+      dplyr::inner_join(groups, by = c("id" = "id"))
+    
+    # Define a nice colour palette
+    # Palette from https://www.schemecolor.com/land-of-pastels.php
+    
+    available_colours <- c("#E494D3", "#87DCC0", "#88BBE4", "#998AD3", "#CDF1AF")
+    
+    # Draw plot
+    
+    if(highlight == "No"){
       
-      # Define a nice colour palette
-      # Palette from https://www.schemecolor.com/land-of-pastels.php
-      
-      available_colours <- c("#E494D3", "#87DCC0", "#88BBE4", "#998AD3", "#CDF1AF")
-      
-      # Draw plot
-      
-      if(highlight == "No"){
+      if(low_dim_method == "PCA"){
         p <- fits %>%
           mutate(group_id = as.factor(group_id)) %>%
-          ggplot2::ggplot(ggplot2::aes(x = .fittedPC1, y = .fittedPC2, colour = group_id,
+          ggplot2::ggplot(ggplot2::aes(x = .fitted1, y = .fitted2, colour = group_id,
                                        text = paste('<b>ID:</b>', id,
                                                     '<br><b>Group:</b>', group_id,
-                                                    '<br><b>PC1 Value:</b>', round(.fittedPC1, digits = 2),
-                                                    '<br><b>PC2 Value:</b>', round(.fittedPC2, digits = 2))))
-        
-        if(nrow(fits) > 200){
-          p <- p +
-            ggplot2::geom_point(size = 1.5)
-        } else{
-          p <- p +
-            ggplot2::geom_point(size = 2.25)
-        }
+                                                    '<br><b>PC1 Value:</b>', round(.fitted1, digits = 2),
+                                                    '<br><b>PC2 Value:</b>', round(.fitted2, digits = 2))))
+      } else{
+        p <- fits %>%
+          mutate(group_id = as.factor(group_id)) %>%
+          ggplot2::ggplot(ggplot2::aes(x = .fitted1, y = .fitted2, colour = group_id,
+                                       text = paste('<b>ID:</b>', id,
+                                                    '<br><b>Group:</b>', group_id,
+                                                    '<br><b>Dim 1 Value:</b>', round(.fitted1, digits = 2),
+                                                    '<br><b>Dim 2 Value:</b>', round(.fitted2, digits = 2))))
+      }
+      
+      if(nrow(fits) > 200){
+        p <- p +
+          ggplot2::geom_point(size = 1.5)
+      } else{
+        p <- p +
+          ggplot2::geom_point(size = 2.25)
+      }
+      
+      if(low_dim_method == "PCA"){
         p <- p +
           ggplot2::labs(x = paste0("PC 1"," (",eigen_pc1,")"),
                         y = paste0("PC 2"," (",eigen_pc2,")"),
-                        colour = "Group") +
-          ggplot2::scale_color_manual(values = available_colours) +
-          ggplot2::theme_bw() +
-          ggplot2::theme(panel.grid.major = ggplot2::element_blank(),
-                         panel.grid.minor = ggplot2::element_blank(),
-                         legend.position = "bottom")
+                        colour = "Group")
+      } else{
+        p <- p +
+          ggplot2::labs(x = "Dimension 1",
+                        y = "Dimension 2",
+                        colour = "Group")
       }
       
-      if(highlight == "Yes"){
-        
-        fits <- fits %>%
-          mutate(group_id = as.factor(group_id))
-        
-        fitsfilt <- fits %>%
-          mutate(id = as.character(id)) %>%
-          filter(id != as.character(id_filt))
-        
-        idfilt <- fits %>%
-          mutate(id = as.character(id)) %>%
-          filter(id == as.character(id_filt))
-        
+      p <- p +
+        ggplot2::scale_color_manual(values = available_colours) +
+        ggplot2::theme_bw() +
+        ggplot2::theme(panel.grid.major = ggplot2::element_blank(),
+                       panel.grid.minor = ggplot2::element_blank(),
+                       legend.position = "bottom")
+    }
+    
+    if(highlight == "Yes"){
+      
+      fits <- fits %>%
+        mutate(group_id = as.factor(group_id))
+      
+      fitsfilt <- fits %>%
+        mutate(id = as.character(id)) %>%
+        filter(id != as.character(id_filt))
+      
+      idfilt <- fits %>%
+        mutate(id = as.character(id)) %>%
+        filter(id == as.character(id_filt))
+      
+      if(low_dim_method == "PCA"){
         p <- fitsfilt %>%
-          ggplot2::ggplot(ggplot2::aes(x = .fittedPC1, y = .fittedPC2, colour = group_id,
+          ggplot2::ggplot(ggplot2::aes(x = .fitted1, y = .fitted2, colour = group_id,
                                        text = paste('<b>ID:</b>', id,
                                                     '<br><b>Group:</b>', group_id,
-                                                    '<br><b>PC1 Value:</b>', round(.fittedPC1, digits = 2),
-                                                    '<br><b>PC2 Value:</b>', round(.fittedPC2, digits = 2)))) +
+                                                    '<br><b>PC1 Value:</b>', round(.fitted1, digits = 2),
+                                                    '<br><b>PC2 Value:</b>', round(.fitted2, digits = 2)))) +
           ggplot2::geom_point(size = 1.5, alpha = 0.3) +
           ggplot2:::geom_point(data = idfilt, size = 4) +
           ggplot2::labs(x = paste0("PC 1"," (",eigen_pc1,")"),
                         y = paste0("PC 2"," (",eigen_pc2,")"),
-                        colour = "Group") +
-          ggplot2::scale_color_manual(values = available_colours) +
-          ggplot2::theme_bw() +
-          ggplot2::theme(panel.grid.major = ggplot2::element_blank(),
-                         panel.grid.minor = ggplot2::element_blank(),
-                         legend.position = "bottom")
+                        colour = "Group")
+      } else{
+        p <- fitsfilt %>%
+          ggplot2::ggplot(ggplot2::aes(x = .fitted1, y = .fitted2, colour = group_id,
+                                       text = paste('<b>ID:</b>', id,
+                                                    '<br><b>Group:</b>', group_id,
+                                                    '<br><b>Dim 1 Value:</b>', round(.fitted1, digits = 2),
+                                                    '<br><b>Dim 2 Value:</b>', round(.fitted2, digits = 2)))) +
+          ggplot2::geom_point(size = 1.5, alpha = 0.3) +
+          ggplot2:::geom_point(data = idfilt, size = 4) +
+          ggplot2::labs(x = "Dimension 1",
+                        y = "Dimension 2",
+                        colour = "Group")
       }
+      p <- p +
+        ggplot2::scale_color_manual(values = available_colours) +
+        ggplot2::theme_bw() +
+        ggplot2::theme(panel.grid.major = ggplot2::element_blank(),
+                       panel.grid.minor = ggplot2::element_blank(),
+                       legend.position = "bottom")
     }
+  }
+  
+  if(is.null(group_var)){
     
-    if(is.null(group_var)){
-      
-      fits <- pca_fit %>%
+    if(low_dim_method == "PCA"){
+      fits <- fits %>%
         broom::augment(dat_filtered) %>%
         dplyr::rename(id = `.rownames`) %>%
+        dplyr::mutate(id = as.factor(id)) %>%
+        rename(.fitted1 = .fittedPC1,
+               .fitted2 = .fittedPC2)
+    } else{
+      fits <- fits %>%
         dplyr::mutate(id = as.factor(id))
+    }
+    
+    if(highlight == "No"){
       
-      if(highlight == "No"){
-        
+      if(low_dim_method == "PCA"){
         p <- fits %>%
-          ggplot2::ggplot(ggplot2::aes(x = .fittedPC1, y = .fittedPC2, group = 1,
+          ggplot2::ggplot(ggplot2::aes(x = .fitted1, y = .fitted2, group = 1,
                                        text = paste('<b>ID:</b>', id,
-                                                    '<br><b>PC1 Value:</b>', round(.fittedPC1, digits = 2),
-                                                    '<br><b>PC2 Value:</b>', round(.fittedPC2, digits = 2))))
-        
-        if(nrow(fits) > 200){
-          p <- p +
-            ggplot2::geom_point(size = 1.5, colour = "#E494D3")
-        } else{
-          p <- p +
-            ggplot2::geom_point(size = 2, colour = "#E494D3")
-        }
-        p <- p +
-          ggplot2::labs(x = paste0("PC 1"," (",eigen_pc1,")"),
-                        y = paste0("PC 2"," (",eigen_pc2,")")) +
-          ggplot2::theme_bw() +
-          ggplot2::theme(panel.grid.major = ggplot2::element_blank(),
-                         panel.grid.minor = ggplot2::element_blank())
+                                                    '<br><b>PC1 Value:</b>', round(.fitted1, digits = 2),
+                                                    '<br><b>PC2 Value:</b>', round(.fitted2, digits = 2))))
+      } else{
+        p <- fits %>%
+          ggplot2::ggplot(ggplot2::aes(x = .fitted1, y = .fitted2, group = 1,
+                                       text = paste('<b>ID:</b>', id,
+                                                    '<br><b>Dim 1 Value:</b>', round(.fitted1, digits = 2),
+                                                    '<br><b>Dim 2 Value:</b>', round(.fitted2, digits = 2))))
       }
       
-      if(highlight == "Yes"){
-        
-        fitsfilt <- fits %>%
-          mutate(id = as.character(id)) %>%
-          filter(id != as.character(id_filt))
-        
-        idfilt <- fits %>%
-          mutate(id = as.character(id)) %>%
-          filter(id == as.character(id_filt))
-        
+      if(nrow(fits) > 200){
+        p <- p +
+          ggplot2::geom_point(size = 1.5, colour = "#E494D3")
+      } else{
+        p <- p +
+          ggplot2::geom_point(size = 2, colour = "#E494D3")
+      }
+      
+      if(low_dim_method == "PCA"){
+        p <- p +
+          ggplot2::labs(x = paste0("PC 1"," (",eigen_pc1,")"),
+                        y = paste0("PC 2"," (",eigen_pc2,")"))
+      } else{
+        p <- p +
+          ggplot2::labs(x = "Dimension 1",
+                        y = "Dimension 2")
+      }
+      p <- p +
+        ggplot2::theme_bw() +
+        ggplot2::theme(panel.grid.major = ggplot2::element_blank(),
+                       panel.grid.minor = ggplot2::element_blank())
+    }
+    
+    if(highlight == "Yes"){
+      
+      fitsfilt <- fits %>%
+        mutate(id = as.character(id)) %>%
+        filter(id != as.character(id_filt))
+      
+      idfilt <- fits %>%
+        mutate(id = as.character(id)) %>%
+        filter(id == as.character(id_filt))
+      
+      if(low_dim_method == "PCA"){
         p <- fitsfilt %>%
-          ggplot2::ggplot(ggplot2::aes(x = .fittedPC1, y = .fittedPC2, group = 1,
+          ggplot2::ggplot(ggplot2::aes(x = .fitted1, y = .fitted2, group = 1,
                                        text = paste('<b>ID:</b>', id,
-                                                    '<br><b>PC1 Value:</b>', round(.fittedPC1, digits = 2),
-                                                    '<br><b>PC2 Value:</b>', round(.fittedPC2, digits = 2)))) +
+                                                    '<br><b>PC1 Value:</b>', round(.fitted1, digits = 2),
+                                                    '<br><b>PC2 Value:</b>', round(.fitted2, digits = 2)))) +
           ggplot2::geom_point(size = 1.5, alpha = 0.3, colour = "#E494D3") +
           ggplot2:::geom_point(data = idfilt, size = 4, colour = "#E494D3") +
           ggplot2::labs(x = paste0("PC 1"," (",eigen_pc1,")"),
-                        y = paste0("PC 2"," (",eigen_pc2,")")) +
-          ggplot2::theme_bw() +
-          ggplot2::theme(panel.grid.major = ggplot2::element_blank(),
-                         panel.grid.minor = ggplot2::element_blank())
+                        y = paste0("PC 2"," (",eigen_pc2,")"))
+      } else{
+        p <- fitsfilt %>%
+          ggplot2::ggplot(ggplot2::aes(x = .fitted1, y = .fitted2, group = 1,
+                                       text = paste('<b>ID:</b>', id,
+                                                    '<br><b>Dim 1 Value:</b>', round(.fitted1, digits = 2),
+                                                    '<br><b>Dim 2 Value:</b>', round(.fitted2, digits = 2)))) +
+          ggplot2::geom_point(size = 1.5, alpha = 0.3, colour = "#E494D3") +
+          ggplot2:::geom_point(data = idfilt, size = 4, colour = "#E494D3") +
+          ggplot2::labs(x = "Dimension 1",
+                        y = "Dimension 2")
       }
+      
+      p <- p +
+        ggplot2::theme_bw() +
+        ggplot2::theme(panel.grid.major = ggplot2::element_blank(),
+                       panel.grid.minor = ggplot2::element_blank())
+    }
   }
   
   #-------- Convert to interactive graphic --------

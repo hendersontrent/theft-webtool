@@ -16,10 +16,12 @@ shinyServer <- function(input, output, session) {
   tmp <- eventReactive(input$run, {
     
     singledat <- input$userUpload
-      multidat <- input$userUpload2
-      multidat_meta <- input$userUpload2Meta
+    multidat <- input$userUpload2
+    multidat_meta <- input$userUpload2Meta
+    
+    # Single datafile
       
-      if(is.null(multidat)){
+      if(!is.null(singledat)){
         
         validate(
           need(singledat, "Please upload a dataset to get started."
@@ -43,6 +45,77 @@ shinyServer <- function(input, output, session) {
         }
         return(mydat)
       }
+    
+    # Wide + Metadata
+    
+    if(!is.null(multidat) & !is.null(multidat_meta)){
+      
+      validate(
+        need(multidat, "Please upload a dataset to get started."
+        ),
+        need(multidat_meta, "Please upload a dataset to get started."
+        )
+      )
+      
+      # Data
+      
+      if(endsWith(multidat$name, ".xlsx")){
+        widedat <- read_excel(multidat$datapath)
+      }
+      
+      if(endsWith(multidat$name, ".xls")){
+        widedat <- read_excel(multidat$datapath)
+      }
+      
+      if(endsWith(multidat$name, ".csv")){
+        widedat <- read_csv(multidat$datapath)
+      }
+      
+      if(endsWith(multidat$name, ".txt")){
+        widedat <- read_tsv(multidat$datapath)
+      }
+      
+      widedat <- widedat %>%
+        dplyr::select(-c(X1))
+      
+      # Metadata
+      
+      if(endsWith(multidat$name, ".xlsx")){
+        metadat <- read_excel(multidat$datapath)
+      }
+      
+      if(endsWith(multidat$name, ".xls")){
+        metadat <- read_excel(multidat$datapath)
+      }
+      
+      if(endsWith(multidat$name, ".csv")){
+        metadat <- read_csv(multidat$datapath)
+      }
+      
+      if(endsWith(multidat$name, ".txt")){
+        metadat <- read_tsv(multidat$datapath)
+      }
+      
+      # Merge
+      
+      if(nrow(widedat) != nrow(metadat)){
+        return()
+      } else{
+        mydat <- widedat %>%
+          cbind(metadat)
+        if(str_detect(input$input_group_var_multi, " ")){
+          mydat <- mydat %>%
+            rename(id = all_of(input$input_id_var_multi)) %>%
+            pivot_longer(!id, names_to = "timepoint", values_to = "values")
+        } else{
+          mydat <- mydat %>%
+            rename(id = all_of(input$input_id_var_multi),
+                   group = all_of(input$input_group_var_multi)) %>%
+            pivot_longer(!c(id, group), names_to = "timepoint", values_to = "values")
+        }
+        return(mydat)
+      }
+    }
   })
   
   #---------------------
@@ -51,38 +124,73 @@ shinyServer <- function(input, output, session) {
   
   featureMatrix <- reactive({
     
-    if(str_detect(input$input_id_var, " ") | str_detect(input$input_group_var, " ") |
-       str_detect(input$input_time_var, " ") | str_detect(input$input_values_var, " ")){
-      
-    } else {
-      
-      # Create group to ID mapping
-      
-      if(!str_detect(input$input_group_var, " ")){
-        group_labs <- tmp() %>%
-          rename(id = all_of(input$input_id_var),
-                 group = all_of(input$input_group_var)) %>%
-          group_by(id, group) %>%
-          summarise(counter = n()) %>%
-          ungroup() %>%
-          dplyr::select(-c(counter)) %>%
+    singledat2 <- input$userUpload
+    multidat2 <- input$userUpload2
+    multidat_meta2 <- input$userUpload2Meta
+    
+    if(!is.null(singledat2) & is.null(multidat2)){
+      if(str_detect(input$input_id_var, " ") | str_detect(input$input_time_var, " ") | str_detect(input$input_values_var, " ")){
+        
+      } else {
+        
+        # Create group to ID mapping
+        
+        if(!str_detect(input$input_group_var, " ")){
+          group_labs <- tmp() %>%
+            rename(id = all_of(input$input_id_var),
+                   group = all_of(input$input_group_var)) %>%
+            group_by(id, group) %>%
+            summarise(counter = n()) %>%
+            ungroup() %>%
+            dplyr::select(-c(counter)) %>%
+            mutate(id = as.character(id))
+        }
+        
+        # Calculate features
+        
+        featureMatrix <- calculate_features(tmp(), id_var = input$input_id_var, time_var = input$input_time_var, 
+                                            values_var = input$input_values_var, feature_set = input$feature_set) %>%
           mutate(id = as.character(id))
+        
+        # Re-join group labels
+        
+        if(!str_detect(input$input_group_var, " ")){
+          featureMatrix <- featureMatrix %>%
+            left_join(group_labs, by = c("id" = "id"))
+        }
+        return(featureMatrix)
       }
+    } else{
       
-      # Calculate features
-      
-      featureMatrix <- calculate_features(tmp(), id_var = input$input_id_var, time_var = input$input_time_var, 
-                                          values_var = input$input_values_var, feature_set = input$feature_set) %>%
-        mutate(id = as.character(id))
-      
-      # Re-join group labels
-      
-      if(!str_detect(input$input_group_var, " ")){
-        featureMatrix <- featureMatrix %>%
-          left_join(group_labs, by = c("id" = "id"))
+      if(str_detect(input$input_id_var_multi, " ")){
+        
+      } else {
+        
+        # Create group to ID mapping
+        
+        if(!str_detect(input$input_group_var_multi, " ")){
+          group_labs <- tmp() %>%
+            group_by(id, group) %>%
+            summarise(counter = n()) %>%
+            ungroup() %>%
+            dplyr::select(-c(counter)) %>%
+            mutate(id = as.character(id))
+        }
+        
+        # Calculate features
+        
+        featureMatrix <- calculate_features(tmp(), id_var = input$input_id_var_multi, time_var = timepoint, 
+                                            values_var = values, feature_set = input$feature_set) %>%
+          mutate(id = as.character(id))
+        
+        # Re-join group labels
+        
+        if(!str_detect(input$input_group_var_multi, " ")){
+          featureMatrix <- featureMatrix %>%
+            left_join(group_labs, by = c("id" = "id"))
+        }
+        return(featureMatrix)
       }
-      
-      return(featureMatrix)
     }
   })
   
@@ -129,11 +237,13 @@ shinyServer <- function(input, output, session) {
     if(str_detect(input$input_group_var, " ")){
       
       plot_low_dimension(featureMatrix(), is_normalised = FALSE, id_var = "id", group_var = NULL, 
-                         method = input$inputScaler, plot = TRUE, highlight = input$pca_highlighter, id_filt = input$selectID)
+                         method = input$inputScaler, plot = TRUE, highlight = input$pca_highlighter, id_filt = input$selectID,
+                         low_dim_method = input$low_dimSelect, perplexity = input$perplexitySlider)
     } else{
       
       plot_low_dimension(featureMatrix(), is_normalised = FALSE, id_var = "id", group_var = "group", 
-                         method = input$inputScaler, plot = TRUE, highlight = input$pca_highlighter, id_filt = input$selectID)
+                         method = input$inputScaler, plot = TRUE, highlight = input$pca_highlighter, id_filt = input$selectID,
+                         low_dim_method = input$low_dimSelect, perplexity = input$perplexitySlider)
     }
   })
   
