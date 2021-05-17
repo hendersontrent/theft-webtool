@@ -107,12 +107,14 @@ shinyServer <- function(input, output, session) {
         if(str_detect(input$input_group_var_multi, " ")){
           mydat <- mydat %>%
             rename(id = all_of(input$input_id_var_multi)) %>%
-            pivot_longer(!id, names_to = "timepoint", values_to = "values")
+            pivot_longer(!id, names_to = "timepoint", values_to = "values") %>%
+            mutate(timepoint = as.numeric(timepoint))
           } else{
           mydat <- mydat %>%
             rename(id = all_of(input$input_id_var_multi),
                    group = all_of(input$input_group_var_multi)) %>%
-            pivot_longer(!c(id, group), names_to = "timepoint", values_to = "values")
+            pivot_longer(!c(id, group), names_to = "timepoint", values_to = "values") %>%
+            mutate(timepoint = as.numeric(timepoint))
           }
         return(mydat)
        } else{
