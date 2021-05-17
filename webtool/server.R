@@ -80,21 +80,24 @@ shinyServer <- function(input, output, session) {
       
       # Metadata
       
-      if(endsWith(multidat$name, ".xlsx")){
-        metadat <- read_excel(multidat$datapath)
+      if(endsWith(multidat_meta$name, ".xlsx")){
+        metadat <- read_excel(multidat_meta$datapath)
       }
       
-      if(endsWith(multidat$name, ".xls")){
-        metadat <- read_excel(multidat$datapath)
+      if(endsWith(multidat_meta$name, ".xls")){
+        metadat <- read_excel(multidat_meta$datapath)
       }
       
-      if(endsWith(multidat$name, ".csv")){
-        metadat <- read_csv(multidat$datapath)
+      if(endsWith(multidat_meta$name, ".csv")){
+        metadat <- read_csv(multidat_meta$datapath)
       }
       
-      if(endsWith(multidat$name, ".txt")){
-        metadat <- read_tsv(multidat$datapath)
+      if(endsWith(multidat_meta$name, ".txt")){
+        metadat <- read_tsv(multidat_meta$datapath)
       }
+      
+      metadat <- metadat %>%
+        dplyr::select(-c(X1))
       
       # Merge
       
@@ -103,6 +106,10 @@ shinyServer <- function(input, output, session) {
       } else{
         mydat <- widedat %>%
           cbind(metadat)
+        
+        drop <- c("X1")
+        mydat <- mydat[,!(names(mydat) %in% drop)]
+        
         if(str_detect(input$input_group_var_multi, " ")){
           mydat <- mydat %>%
             rename(id = all_of(input$input_id_var_multi)) %>%
