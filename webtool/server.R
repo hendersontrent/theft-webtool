@@ -339,6 +339,19 @@ shinyServer <- function(input, output, session) {
   
   # ID x Feature plot
   
+  output$discrim_plot <- renderPlotly({
+    
+    # Account for lack of data upload to avoid error message
+    
+    validate(
+      need(featureMatrix(), "Please upload a dataset to get started."
+      )
+    )
+    
+  })
+  
+  # ID x Feature plot
+  
   output$feat_mat_plot <- renderPlotly({
     
     # Account for lack of data upload to avoid error message
