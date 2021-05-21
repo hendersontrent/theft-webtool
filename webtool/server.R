@@ -41,7 +41,9 @@ shinyServer <- function(input, output, session) {
         if(endsWith(singledat$name, ".txt")){
           mydat <- read_tsv(singledat$datapath)
         }
+        
         return(mydat)
+        
        } else if(!is.null(input$userUpload2) && !is.null(input$userUpload2Meta) && is.null(input$userUpload)){
          
          multidat <- input$userUpload2
@@ -138,12 +140,28 @@ shinyServer <- function(input, output, session) {
         
       } else {
         
+        # Catch non-numeric cases for time and values to simplify things
+        
+        tmpTest <- tmp() %>%
+            rename(timepoint = all_of(input$input_time_var),
+                   values = all_of(input$input_values_var)) %>%
+          mutate(timepoint = as.numeric(as.character(timepoint)),
+                 values = as.numeric(as.character(values)))
+          
+          if(sum(is.na(tmpTest$timepoint)) > 0 | sum(is.na(tmpTest$values)) > 0){
+            return()
+          } else{
+            tmp2 <- tmp() %>%
+              rename(id = all_of(input$input_id_var),
+                     group = all_of(input$input_group_var),
+                     timepoint = all_of(input$input_time_var),
+                     values = all_of(input$input_values_var))
+          }
+        
         # Create group to ID mapping
         
         if(!str_detect(input$input_group_var, " ")){
-          group_labs <- tmp() %>%
-            rename(id = all_of(input$input_id_var),
-                   group = all_of(input$input_group_var)) %>%
+          group_labs <- tmp2 %>%
             group_by(id, group) %>%
             summarise(counter = n()) %>%
             ungroup() %>%
@@ -153,8 +171,8 @@ shinyServer <- function(input, output, session) {
         
         # Calculate features
         
-        featureMatrix <- calculate_features(tmp(), id_var = input$input_id_var, time_var = input$input_time_var, 
-                                            values_var = input$input_values_var, feature_set = input$feature_set) %>%
+        featureMatrix <- calculate_features(tmp2, id_var = "id", time_var = "timepoint", 
+                                            values_var = "values", feature_set = input$feature_set) %>%
           mutate(id = as.character(id))
         
         # Re-join group labels
@@ -170,6 +188,16 @@ shinyServer <- function(input, output, session) {
       if(str_detect(input$input_id_var_multi, " ")){
         
       } else {
+        
+        # Catch non-numeric cases for time and values to simplify things
+        
+        tmpTest <- tmp() %>%
+          mutate(values = as.numeric(as.character(values)))
+        
+        if(sum(is.na(tmpTest$values)) > 0){
+          return()
+        } else{
+        }
         
         # Create group to ID mapping
         

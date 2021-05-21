@@ -16,7 +16,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                             
                             # Nice lab group background
                             
-                            setBackgroundImage(src = "Fulcher_Ben_MonashUniversity_trans2.png"),
+                            setBackgroundImage(src = "FlyEye_trans.png"),
                             
                             # Intro text
                             
@@ -46,6 +46,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                             tabsetPanel(id = "landing_tabs",
                                               tabPanel("Single Long Datafile",
                                                        br(),
+                                                       p("Please ensure your 'timepoint' variable is an integer or numeric. If it is a date or other format, please convert prior to uploading."),
                                                        fluidRow(
                                                          column(2,
                                                            fileInput("userUpload", HTML("Upload your time series file"),
@@ -122,7 +123,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                 p("This page visualises the time series features in a low-dimensional representation."),
                                 h3("Plotting Controls"),
                                 selectInput("inputScaler", "Select a rescaling function to apply prior to performing dimension reduction",
-                                            choices = all_scalers, selected = all_scalers[1], multiple = FALSE),
+                                            choices = all_scalers, selected = all_scalers[3], multiple = FALSE),
                                 br(),
                                 radioButtons("low_dimSelect", "Select a low dimension method to use", 
                                              choices = lowdims, selected = lowdims[1], inline = TRUE),
@@ -178,25 +179,38 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                    #------------------ Matrix page ---------------
                    
                    tabPanel(navtab3,
-                            fluidRow(h1("Feature Matrix Visualisation")),
+                            fluidRow(h1("Additional Visualisations")),
                             sidebarLayout(
                               sidebarPanel(
                                 h2("Page Information"),
-                                p("This page visualises the time series feature matrix as an array of different heatmap data visualisations. All data is scaled and hierarchically-clustered prior to plotting."),
+                                p("This page visualises the time series feature matrix as an array of different data visualisations. All data is scaled and hierarchically-clustered prior to heatmap plotting."),
                                 br(),
                                 selectInput("inputScaler2", "Select a rescaling function to apply prior to performing correlations, clustering, and plotting.",
-                                            choices = all_scalers, selected = all_scalers[2], multiple = FALSE)
+                                            choices = all_scalers, selected = all_scalers[3], multiple = FALSE)
                               ),
-                              mainPanel(fluidRow(
+                              mainPanel(
+                                tabsetPanel(id = "matrix_tabs",
+                                            tabPanel("Discriminant Visualisations",
+                                                     fluidRow(
                                 column(10,
-                                  h3("Unique ID x Unique ID Correlation Matrix"),
-                                  shinycssloaders::withSpinner(plotlyOutput("feat_mat_plot", height = "500px"))
-                               )
-                              ),
-                              fluidRow(
-                                column(10,
-                                       h3("Unique ID x Feature Cluster Matrix"),
-                                       shinycssloaders::withSpinner(plotlyOutput("id_by_feat_plot", height = "500px"))
+                                  h3("Top Discriminating Features"),
+                                  shinycssloaders::withSpinner(plotlyOutput("discrim_plot", height = "500px"))
+                         )
+                        )
+                       ),
+                       tabPanel("Matrix Visualisations",
+                                fluidRow(
+                                  column(10,
+                                         h3("Unique ID x Unique ID Correlation Matrix"),
+                                         shinycssloaders::withSpinner(plotlyOutput("feat_mat_plot", height = "750px"))
+                                 )
+                                ),
+                                fluidRow(
+                                  column(10,
+                                         h3("Unique ID x Feature Cluster Matrix"),
+                                         shinycssloaders::withSpinner(plotlyOutput("id_by_feat_plot", height = "750px"))
+                         )
+                        )
                        )
                       )
                      )
