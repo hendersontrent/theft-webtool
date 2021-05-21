@@ -194,7 +194,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                                      fluidRow(
                                 column(10,
                                   h3("Top Discriminating Features"),
-                                  shinycssloaders::withSpinner(plotlyOutput("discrim_plot", height = "500px"))
+                                  shinycssloaders::withSpinner(plotlyOutput("discrim_plot", height = "1000px"))
                          )
                         )
                        ),

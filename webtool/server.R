@@ -348,30 +348,39 @@ shinyServer <- function(input, output, session) {
       )
     )
     
-    # Draw plot
-    
-    colsList <- colnames(featureMatrix())
-    '%ni%' <- Negate('%in%')
-    
-    if("group" %ni% colsList){
+    if(input$feature_set != "catch22"){
       return()
-    } else {
-      p <- featureMatrix() %>%
-        geom_violin(aes(x = group, y = values, colour = group)) + 
-        geom_jitter(aes(x = group, y = values, colour = group), height = 0, width = 0.1) +
-        labs(x = "Group",
-             y = "Value",
-             colour = NULL) +
-        theme_bw() +
-        theme(panel.grid.minor = element_blank(),
-              legend.position = "none") +
-        facet_wrap(~names, ncol = 4)
+    } else{
       
-      # Convert to interactive graphic
+      # Draw plot
       
-      p_int <- ggplotly(p, tooltip = c("text")) %>%
-        layout(legend = list(orientation = "h", x = 0, y = -0.2)) %>%
-        config(displayModeBar = FALSE)
+      colsList <- colnames(featureMatrix())
+      '%ni%' <- Negate('%in%')
+      
+      if("group" %ni% colsList){
+      } else {
+        p <- featureMatrix() %>%
+          mutate(group = as.factor(group)) %>%
+          ggplot(aes(x = group, y = values, colour = group,
+                     text = paste('<b>ID:</b>', id,
+                                  '<br><b>Group:</b>', group,
+                                  '<br><b>Value:</b>', round(values, digits = 2)))) +
+          geom_violin() + 
+          geom_jitter(height = 0, width = 0.1, size = 1.25) +
+          labs(x = "Group",
+               y = "Value",
+               colour = NULL) +
+          theme_bw() +
+          theme(panel.grid.minor = element_blank(),
+                legend.position = "none") +
+          facet_wrap(~names, ncol = 4)
+        
+        # Convert to interactive graphic
+        
+        p_int <- ggplotly(p, tooltip = c("text")) %>%
+          layout(legend = list(orientation = "h", x = 0, y = -0.2)) %>%
+          config(displayModeBar = FALSE)
+     }
     }
   })
   
