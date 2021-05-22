@@ -185,7 +185,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                 h2("Page Information"),
                                 p("This page visualises the time series feature matrix as an array of different data visualisations. All data is scaled and hierarchically-clustered prior to heatmap plotting."),
                                 br(),
-                                selectInput("inputScaler2", "Select a rescaling function to apply prior to performing correlations, clustering, and plotting.",
+                                selectInput("inputScaler2", "Select a rescaling function to apply prior to producing matrix visualisations.",
                                             choices = all_scalers, selected = all_scalers[3], multiple = FALSE)
                               ),
                               mainPanel(
@@ -194,7 +194,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                                      fluidRow(
                                 column(10,
                                   h3("Top Discriminating Features"),
-                                  shinycssloaders::withSpinner(plotlyOutput("discrim_plot", height = "500px"))
+                                  shinycssloaders::withSpinner(plotlyOutput("discrim_plot", height = "1000px"))
                          )
                         )
                        ),

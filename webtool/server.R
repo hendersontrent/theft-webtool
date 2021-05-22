@@ -348,6 +348,46 @@ shinyServer <- function(input, output, session) {
       )
     )
     
+    if(input$feature_set != "catch22"){
+      return()
+    } else{
+      
+      # Draw plot
+      
+      colsList <- colnames(featureMatrix())
+      '%ni%' <- Negate('%in%')
+      
+      if("group" %ni% colsList){
+      } else {
+        
+        # Define a nice colour palette
+        # Palette from https://www.schemecolor.com/land-of-pastels.php
+        
+        available_colours <- c("#E494D3", "#87DCC0", "#88BBE4", "#998AD3", "#CDF1AF")
+        
+        # Draw graphic
+        
+        p <- featureMatrix() %>%
+          mutate(group = as.factor(group)) %>%
+          ggplot(aes(x = group, y = values, colour = group)) +
+          geom_violin() +
+          geom_point(size = 1, alpha = 0.7, position = position_jitter(w = 0.05)) +
+          labs(x = "Group",
+               y = "Value") +
+          scale_color_manual(values = available_colours) +
+          theme_bw() +
+          theme(panel.grid.minor = element_blank(),
+                legend.position = "none",
+                strip.background = element_blank()) +
+          facet_wrap(~names, ncol = 4, scales = "free_y")
+        
+        # Convert to interactive graphic
+        
+        p_int <- ggplotly(p, tooltip = c("text")) %>%
+          layout(legend = list(orientation = "h", x = 0, y = -0.2)) %>%
+          config(displayModeBar = FALSE)
+     }
+    }
   })
   
   # ID x Feature plot
