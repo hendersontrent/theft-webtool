@@ -359,21 +359,27 @@ shinyServer <- function(input, output, session) {
       
       if("group" %ni% colsList){
       } else {
+        
+        # Define a nice colour palette
+        # Palette from https://www.schemecolor.com/land-of-pastels.php
+        
+        available_colours <- c("#E494D3", "#87DCC0", "#88BBE4", "#998AD3", "#CDF1AF")
+        
+        # Draw graphic
+        
         p <- featureMatrix() %>%
           mutate(group = as.factor(group)) %>%
-          ggplot(aes(x = group, y = values, colour = group,
-                     text = paste('<b>ID:</b>', id,
-                                  '<br><b>Group:</b>', group,
-                                  '<br><b>Value:</b>', round(values, digits = 2)))) +
-          geom_violin() + 
-          geom_jitter(height = 0, width = 0.1, size = 1.25) +
+          ggplot(aes(x = group, y = values, colour = group)) +
+          geom_violin() +
+          geom_point(size = 1, alpha = 0.7, position = position_jitter(w = 0.05)) +
           labs(x = "Group",
-               y = "Value",
-               colour = NULL) +
+               y = "Value") +
+          scale_color_manual(values = available_colours) +
           theme_bw() +
           theme(panel.grid.minor = element_blank(),
-                legend.position = "none") +
-          facet_wrap(~names, ncol = 4)
+                legend.position = "none",
+                strip.background = element_blank()) +
+          facet_wrap(~names, ncol = 4, scales = "free_y")
         
         # Convert to interactive graphic
         
