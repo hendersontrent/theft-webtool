@@ -142,15 +142,15 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                 downloadButton("feature_download", "Download Calculated Feature File")
                               ),
                               mainPanel(fluidRow(
-                                column(8,
+                                column(11,
                                   h3("Low Dimension Plot"),
-                                  shinycssloaders::withSpinner(plotlyOutput("low_dim_plot", height = "500px"))
+                                  shinycssloaders::withSpinner(plotlyOutput("low_dim_plot", height = "600px"))
                                )
                               ),
                               fluidRow(
-                                column(8,
+                                column(11,
                                   h3("Raw Time Series"),
-                                  shinycssloaders::withSpinner(plotlyOutput("raw_ts_plot", height = "300px"))
+                                  shinycssloaders::withSpinner(plotlyOutput("raw_ts_plot", height = "400px"))
                                 )
                                )
                               )
@@ -167,9 +167,9 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                 p("This page visualises the quality of the calculated feature matrix by computing amounts of each data type."),
                               ),
                               mainPanel(fluidRow(
-                                column(10,
+                                column(11,
                                   h3("Data Quality Plot"),
-                                  shinycssloaders::withSpinner(plotlyOutput("data_qual_plot", height = "650px"))
+                                  shinycssloaders::withSpinner(plotlyOutput("data_qual_plot", height = "750px"))
                        )
                       )
                      )
@@ -192,21 +192,21 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                 tabsetPanel(id = "matrix_tabs",
                                             tabPanel("Discriminant Visualisations",
                                                      fluidRow(
-                                column(10,
+                                column(11,
                                   h3("Top Discriminating Features"),
-                                  shinycssloaders::withSpinner(plotlyOutput("discrim_plot", height = "1000px"))
+                                  shinycssloaders::withSpinner(plotlyOutput("discrim_plot", height = "1250px"))
                          )
                         )
                        ),
                        tabPanel("Matrix Visualisations",
                                 fluidRow(
-                                  column(10,
+                                  column(11,
                                          h3("Unique ID x Unique ID Correlation Matrix"),
                                          shinycssloaders::withSpinner(plotlyOutput("feat_mat_plot", height = "750px"))
                                  )
                                 ),
                                 fluidRow(
-                                  column(10,
+                                  column(11,
                                          h3("Unique ID x Feature Cluster Matrix"),
                                          shinycssloaders::withSpinner(plotlyOutput("id_by_feat_plot", height = "750px"))
                          )

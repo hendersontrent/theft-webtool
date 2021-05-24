@@ -299,6 +299,8 @@ shinyServer <- function(input, output, session) {
       
       p <- tmp() %>%
         filter(id == input$selectID) %>%
+        rename(timepoint = all_of(input$input_time_var)) %>%
+        rename(values = all_of(input$input_values_var)) %>%
         ggplot(aes(x = timepoint, y = values, group = 1,
                    text = paste('<b>ID:</b>', id,
                                 '<br><b>Timepoint:</b>', timepoint,
