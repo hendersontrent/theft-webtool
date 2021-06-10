@@ -5,8 +5,8 @@ account: dynamicsandneuralsystems
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 4150829
-bundleId: 4695198
+bundleId: 4699390
 url: https://dynamicsandneuralsystems.shinyapps.io/timeseriesfeaturevis/
-when: 1623220455.50623
+when: 1623295136.62998
 asMultiple: FALSE
 asStatic: FALSE
