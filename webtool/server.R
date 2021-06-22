@@ -119,7 +119,7 @@ shinyServer <- function(input, output, session) {
             mutate(timepoint = as.numeric(timepoint))
           }
         return(mydat)
-       } else if(!is.null(input$userUpload3) && !is.null(input$userUpload2Meta) && is.null(input$userUpload) && is.null(input$userUpload2)){
+       } else if(!is.null(input$userUpload3) && is.null(input$userUpload2Meta) && is.null(input$userUpload) && is.null(input$userUpload2)){
          
          matlabdat <- input$userUpload3
          
@@ -128,10 +128,10 @@ shinyServer <- function(input, output, session) {
            )
          )
          
-         if(endsWith(singledat$name, ".mat")){
-           mydat <- welcome_mat(singledat$datapath)
+         if(endsWith(matlabdat$name, ".mat")){
+           mydat <- welcome_mat(matlabdat$datapath)
          }
-         
+         return(mydat)
        } else{
     }
   })
@@ -163,35 +163,29 @@ shinyServer <- function(input, output, session) {
           if(sum(is.na(tmpTest$timepoint)) > 0 | sum(is.na(tmpTest$values)) > 0){
             return()
           } else{
-            tmp2 <- tmp() %>%
-              rename(id = all_of(input$input_id_var),
-                     group = all_of(input$input_group_var),
-                     timepoint = all_of(input$input_time_var),
-                     values = all_of(input$input_values_var))
+            
+            if(!str_detect(input$input_group_var, " ")){
+              tmp2 <- tmp() %>%
+                rename(id = all_of(input$input_id_var),
+                       group = all_of(input$input_group_var),
+                       timepoint = all_of(input$input_time_var),
+                       values = all_of(input$input_values_var))
+            } else{
+              tmp2 <- tmp() %>%
+                rename(id = all_of(input$input_id_var),
+                       timepoint = all_of(input$input_time_var),
+                       values = all_of(input$input_values_var))
+            }
           }
-        
-        # Create group to ID mapping
-        
-        if(!str_detect(input$input_group_var, " ")){
-          group_labs <- tmp2 %>%
-            group_by(id, group) %>%
-            summarise(counter = n()) %>%
-            ungroup() %>%
-            dplyr::select(-c(counter)) %>%
-            mutate(id = as.character(id))
-        }
         
         # Calculate features
         
-        featureMatrix <- calculate_features(tmp2, id_var = "id", time_var = "timepoint", 
-                                            values_var = "values", feature_set = input$feature_set) %>%
-          mutate(id = as.character(id))
-        
-        # Re-join group labels
-        
         if(!str_detect(input$input_group_var, " ")){
-          featureMatrix <- featureMatrix %>%
-            left_join(group_labs, by = c("id" = "id"))
+        featureMatrix <- calculate_features(tmp2, id_var = "id", time_var = "timepoint", 
+                                            values_var = "values", group_var = "group", feature_set = input$feature_set)
+        } else{
+          featureMatrix <- calculate_features(tmp2, id_var = "id", time_var = "timepoint", 
+                                              values_var = "values", feature_set = input$feature_set)
         }
         return(featureMatrix)
       }
@@ -211,28 +205,15 @@ shinyServer <- function(input, output, session) {
         } else{
         }
         
-        # Create group to ID mapping
-        
-        if(!str_detect(input$input_group_var_multi, " ")){
-          group_labs <- tmp() %>%
-            group_by(id, group) %>%
-            summarise(counter = n()) %>%
-            ungroup() %>%
-            dplyr::select(-c(counter)) %>%
-            mutate(id = as.character(id))
-        }
-        
         # Calculate features
         
-        featureMatrix <- calculate_features(tmp(), id_var = "id", time_var = "timepoint", 
-                                            values_var = "values", feature_set = input$feature_set) %>%
-          mutate(id = as.character(id))
-        
-        # Re-join group labels
-        
         if(!str_detect(input$input_group_var_multi, " ")){
-          featureMatrix <- featureMatrix %>%
-            left_join(group_labs, by = c("id" = "id"))
+        
+        featureMatrix <- calculate_features(tmp(), id_var = "id", time_var = "timepoint", 
+                                            values_var = "values", group_var = "group", feature_set = input$feature_set)
+        } else{
+          featureMatrix <- calculate_features(tmp(), id_var = "id", time_var = "timepoint", 
+                                              values_var = "values", feature_set = input$feature_set)
         }
         return(featureMatrix)
       }
@@ -281,7 +262,10 @@ shinyServer <- function(input, output, session) {
     
     # Draw graphic
     
-    if(str_detect(input$input_group_var, " ")){
+    colsList <- colnames(featureMatrix())
+    '%ni%' <- Negate('%in%')
+    
+    if("group" %ni% colsList){
       
       plot_low_dimension(featureMatrix(), is_normalised = FALSE, id_var = "id", group_var = NULL, 
                          method = input$inputScaler, plot = TRUE, highlight = input$pca_highlighter, id_filt = input$selectID,

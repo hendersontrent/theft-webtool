@@ -5,7 +5,7 @@
 #' @author Trent Henderson
 #' 
 
-welome_mat <- function(data){
+welcome_mat <- function(data){
   
   # Read MATLAB file into list
   
@@ -13,13 +13,12 @@ welome_mat <- function(data){
   
   theNames <- names(d)
   correctNames <- c("timeSeriesData", "labels", "keywords")
-  '%ni%' <- Negate('%in%')
   
   if(length(theNames) != 3){
     stop("3 variables should be 'timeSeriesData', 'labels', and 'keywords'.")
   }
   
-  if(theNames %ni% correctNames){
+  if(setequal(theNames, correctNames) == FALSE){
     stop("3 variables should be 'timeSeriesData', 'labels', and 'keywords'.")
   }
   
@@ -31,7 +30,7 @@ welome_mat <- function(data){
   tmp1Vec <- tmp1$V1
   tmp2 <- d$timeSeriesData
   
-  indices <- length(tmp2)
+  indices <- seq(from = 1, to = length(tmp2), by = 1)
   storage <- list()
   
   for(i in indices){
@@ -39,7 +38,7 @@ welome_mat <- function(data){
     tmpListDat <- as.data.frame(tmpList)
     
     tmpList2 <- tmpListDat %>%
-      rename(values = 1) %>%
+      rename(values = V1) %>%
       mutate(timepoint = row_number()) %>%
       mutate(id = tmpVec[i],
              group = tmp1Vec[i])

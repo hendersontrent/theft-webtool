@@ -65,6 +65,7 @@ calc_tsfeatures <- function(data){
 #' @import feasts
 #' @import tsfeatures
 #' @import tsibble
+#' @import reticulate
 #' @importFrom tibble as_tibble
 #' @importFrom tidyr pivot_longer
 #' @importFrom data.table rbindlist
@@ -74,22 +75,31 @@ calc_tsfeatures <- function(data){
 #' @param id_var a string specifying the ID variable to group data on (if one exists). Defaults to NULL
 #' @param time_var a string specifying the time index variable. Defaults to NULL
 #' @param values_var a string specifying the values variable. Defaults to NULL
+#' @param group_var a string specifying the grouping variable that each unique series sits under. Defaults to NULL
 #' @param feature_set the set of time-series features to calculate. Defaults to 'all'
+#' @param tsfresh_cleanup a Boolean specifying whether to use the in-built 'tsfresh' relevant feature filter or not. Defaults to FALSE
 #' @return object of class DataFrame that contains the summary statistics for each feature
 #' @author Trent Henderson
 #' @export
 #' @examples
 #' \dontrun{
 #' library(dplyr)
+#' library(tsibbledata)
+#' 
 #' d <- tsibbledata::aus_retail %>%
-#'   filter(State == "New South Wales")
-#' outs <- calculate_features(data = d, id_var = "Industry", time_var = "Month", 
-#'   values_var = "Turnover", feature_set = "all", tsfresh_cleanup = FALSE)
+#'   rename(Series_ID = 3)
+#' 
+#' feature_matrix <- calculate_features(data = d, 
+#'   id_var = "Series_ID", 
+#'   time_var = "Month", 
+#'   values_var = "Turnover", 
+#'   group_var = "State",
+#'   feature_set = "catch22")
 #' }
 #'
 
-calculate_features <- function(data, id_var = NULL, time_var = NULL, values_var = NULL,
-                               feature_set = c("all", "catch22", "feasts", "tsfeatures")){
+calculate_features <- function(data, id_var = NULL, time_var = NULL, values_var = NULL, group_var = NULL,
+                               feature_set = c("all", "catch22", "feasts", "tsfeatures", "tsfresh", "tsfel"), tsfresh_cleanup = FALSE){
   
   if(is.null(id_var) || is.null(time_var) || is.null(values_var)){
     stop("As {tsibble} currently cannot handle numeric vectors, input must be a dataframe with at least 3 columns: id, timepoint, value")
@@ -109,11 +119,15 @@ calculate_features <- function(data, id_var = NULL, time_var = NULL, values_var 
   
   # Method selection
   
-  the_sets <- c("all", "catch22", "feasts", "tsfeatures")
+  the_sets <- c("all", "catch22", "feasts", "tsfeatures", "tsfresh", "tsfel")
   '%ni%' <- Negate('%in%')
   
   if(feature_set %ni% the_sets){
-    stop("feature_set should be a selection or combination of 'all', 'catch22', 'feasts' or 'tsfeatures'entered as a single string or vector for multiple.")
+    stop("feature_set should be a selection or combination of 'all', 'catch22', 'feasts', 'tsfeatures', 'tsfresh' or 'tsfel' entered as a single string or vector for multiple.")
+  }
+  
+  if(!is.null(group_var) && !is.character(group_var)){
+    stop("group_var should be a string specifying the variable name of your grouping variable")
   }
   
   #--------- Feature calcs --------
@@ -123,7 +137,24 @@ calculate_features <- function(data, id_var = NULL, time_var = NULL, values_var 
                   timepoint = dplyr::all_of(time_var),
                   values = dplyr::all_of(values_var))
   
+  # Group labels
+  
+  if(!is.null(group_var)){
+    
+    grouplabs_data <- as.data.frame(data) # Catches cases where input object is of class "tsibble"
+    
+    grouplabs <- grouplabs_data %>%
+      dplyr::rename(id = dplyr::all_of(id_var),
+                    group = dplyr::all_of(group_var)) %>%
+      dplyr::select(c(id, group)) %>%
+      dplyr::distinct() %>%
+      dplyr::mutate(id = as.character(id))
+  } else{
+  }
+  
   if("all" %in% feature_set){
+    
+    message("Calculating all feature sets except for 'tsfresh' and 'tsfel' to avoid Python dependence. If you want these features too, please run the function again specifying 'tsfresh' or 'tsfel' and then append the resultant dataframes.")
     
     tmp <- calc_catch22(data = data_re)
     tmp1 <- calc_feasts(data = data_re)
@@ -147,19 +178,58 @@ calculate_features <- function(data, id_var = NULL, time_var = NULL, values_var 
     tmp2 <- calc_tsfeatures(data = data_re)
   }
   
-  tmp_all <- data.frame()
-  
-  if(exists("tmp")){
-    tmp_all <- dplyr::bind_rows(tmp_all, tmp)
+  if("tsfresh" %in% feature_set){
+    
+    message("'tsfresh' requires a Python installation and the 'tsfresh' Python package to also be installed. Please ensure you have this working (see https://tsfresh.com for more information). You can specify which Python to use by running one of the following in your R console/script prior to calling calculate_features(): use_python = 'path_to_your_python_as_a_string_here' or use_virtualenv = 'name_of_your_virtualenv_here'")
+    
+    if(tsfresh_cleanup == TRUE){
+      cleanuper <- "Yes"
+    }
+    
+    if(tsfresh_cleanup == FALSE){
+      cleanuper <- "No"
+    }
+    
+    tmp3 <- calc_tsfresh(data = data_re, column_id = "id", column_sort = "timepoint", cleanup = cleanuper)
   }
   
-  if(exists("tmp1")){
-    tmp_all <- dplyr::bind_rows(tmp_all, tmp1)
+  if("tsfel" %in% feature_set){
+    
+    message("'tsfel' requires a Python installation and the 'tsfel' Python package to also be installed. Please ensure you have this working (see https://tsfel.readthedocs.io/en/latest/ for more information). You can specify which Python to use by running one of the following in your R console/script prior to calling calculate_features(): use_python = 'path_to_your_python_as_a_string_here' or use_virtualenv = 'name_of_your_virtualenv_here'")
+    
+    tmp4 <- calc_tsfel(data = data_re)
   }
   
-  if(exists("tmp2")){
-    tmp_all <- dplyr::bind_rows(tmp_all, tmp2)
+  if(!exists("tmp_all")){
+    tmp_all <- data.frame()
+    
+    if(exists("tmp")){
+      tmp_all <- dplyr::bind_rows(tmp_all, tmp)
+    }
+    
+    if(exists("tmp1")){
+      tmp_all <- dplyr::bind_rows(tmp_all, tmp1)
+    }
+    
+    if(exists("tmp2")){
+      tmp_all <- dplyr::bind_rows(tmp_all, tmp2)
+    }
+    
+    if(exists("tmp3")){
+      tmp_all <- dplyr::bind_rows(tmp_all, tmp3)
+    }
+    
+    if(exists("tmp4")){
+      tmp_all <- dplyr::bind_rows(tmp_all, tmp4)
+    }
+  } else{
   }
   
+  if(exists("grouplabs")){
+    tmp_all <- tmp_all %>%
+      dplyr::mutate(id = as.character(id)) %>%
+      dplyr::left_join(grouplabs, by = c("id" = "id"))
+  } else{
+  }
   return(tmp_all)
 }

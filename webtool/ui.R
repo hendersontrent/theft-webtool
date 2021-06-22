@@ -100,7 +100,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                                                           value = "Enter the group variable name..."))
                                                          )
                                                         ),
-                                              tabPanel("hctsa File",
+                                              tabPanel("hctsa Formatted File",
                                                        br(),
                                                        p("Please ensure your file is formatted with the following 3 variables as per hctsa conventions: 'keywords', 'labels', 'timeSeriesData'."),
                                                        fluidRow(
