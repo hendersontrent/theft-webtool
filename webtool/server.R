@@ -155,7 +155,7 @@ shinyServer <- function(input, output, session) {
         # Catch non-numeric cases for time and values to simplify things
         
         tmpTest <- tmp() %>%
-            rename(timepoint = all_of(input$input_time_var),
+          rename(timepoint = all_of(input$input_time_var),
                    values = all_of(input$input_values_var)) %>%
           mutate(timepoint = as.numeric(as.character(timepoint)),
                  values = as.numeric(as.character(values)))
