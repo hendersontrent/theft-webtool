@@ -40,13 +40,17 @@ welcome_mat <- function(data){
     tmpList2 <- tmpListDat %>%
       rename(values = V1) %>%
       mutate(timepoint = row_number()) %>%
-      mutate(id = tmpVec[i],
-             group = tmp1Vec[i])
+      mutate(group = tmpVec[i],
+             id = tmp1Vec[i])
     
     storage[[i]] <- tmpList2
   }
   
   myData <- rbindlist(storage, use.names = TRUE)
+  
+  if(!is.numeric(myData$values)){
+    stop("Non-numerics identified in values.")
+  }
   
   return(myData)
 }

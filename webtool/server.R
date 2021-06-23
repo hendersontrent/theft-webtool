@@ -147,7 +147,7 @@ shinyServer <- function(input, output, session) {
       )
     )
     
-    if(!is.null(input$userUpload) && is.null(input$userUpload2)){
+    if(!is.null(input$userUpload) && is.null(input$userUpload2) && is.null(input$userUpload3)){
       if(str_detect(input$input_id_var, " ") || str_detect(input$input_time_var, " ") || str_detect(input$input_values_var, " ")){
         
       } else {
@@ -156,7 +156,7 @@ shinyServer <- function(input, output, session) {
         
         tmpTest <- tmp() %>%
           rename(timepoint = all_of(input$input_time_var),
-                   values = all_of(input$input_values_var)) %>%
+                 values = all_of(input$input_values_var)) %>%
           mutate(timepoint = as.numeric(as.character(timepoint)),
                  values = as.numeric(as.character(values)))
           
@@ -189,7 +189,7 @@ shinyServer <- function(input, output, session) {
         }
         return(featureMatrix)
       }
-    } else if(is.null(input$userUpload) && !is.null(input$userUpload2)){
+    } else if(is.null(input$userUpload) && !is.null(input$userUpload2) && is.null(input$userUpload3)){
       
       if(str_detect(input$input_id_var_multi, " ")){
         
