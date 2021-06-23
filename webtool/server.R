@@ -217,6 +217,9 @@ shinyServer <- function(input, output, session) {
         }
         return(featureMatrix)
       }
+    } else if (!is.null(input$userUpload3) && is.null(input$userUpload2Meta) && is.null(input$userUpload) && is.null(input$userUpload2)){
+      featureMatrix <- calculate_features(tmp(), id_var = "id", time_var = "timepoint", 
+                                          values_var = "values", group_var = "group", feature_set = input$feature_set)
     } else{
       
     }
