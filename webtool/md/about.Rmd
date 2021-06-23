@@ -9,9 +9,7 @@ The backbone of the application is the `R` package [`theft`](https://github.com/
 
 ### How do I use it?
 
-The application only requires a time-series dataset to be uploaded by the user to get started. Navigate to the homepage and upload your time series dataset. At the moment, only long ([tidy](https://cran.r-project.org/web/packages/tidyr/vignettes/tidy-data.html)) data is accepted. This will be extended soon to accommodate traditional wide format data and a corresponding metadata file containing ID variables, group labels, and other information.
-
-More input formats are continuously being added. Please check back soon for more options if you data format is not currently accepted, otherwise, please convert to an accepted format in the meantime.
+The application only requires a time-series dataset to be uploaded by the user to get started. Navigate to the homepage and upload your time series dataset. More input formats are continuously being added. Please check back soon for more options if you data format is not currently accepted, otherwise, please convert to an accepted format in the meantime.
 
 ### Who made it?
 
@@ -26,5 +24,6 @@ There are numerous resources associated with the computations, methodology, and 
 * B.D. Fulcher, M.A. Little, N.S. Jones. [Highly comparative time-series analysis: the empirical structure of time series and their methods](https://royalsocietypublishing.org/doi/full/10.1098/rsif.2013.0048). J. Roy. Soc. Interface 10, 83 (2013).
 * [`catch22`](https://github.com/chlubba/catch22) software toolbox in C
 * Lubba, C. H. et al. [catch22: CAnonical Time-series CHaracteristics](https://link.springer.com/article/10.1007/s10618-019-00647-x). Data Mining and Knowledge Discovery, 33 (2019)
+* [Rcatch22](https://github.com/hendersontrent/Rcatch22) software toolbox - Trent Henderson (2021). Rcatch22: Calculation of 22 CAnonical Time-Series CHaracteristics. R package version 0.1.12. https://CRAN.R-project.org/package=Rcatch22
 * [`feasts`](https://feasts.tidyverts.org) software toolbox - Mitchell O'Hara-Wild, Rob Hyndman and Earo Wang (2021). feasts: Feature Extraction and Statistics for Time Series. R package version 0.2.1. https://CRAN.R-project.org/package=feasts
 * [`tsfeatures`](https://pkg.robjhyndman.com/tsfeatures/) software toolbox - Rob Hyndman, Yanfei Kang, Pablo Montero-Manso, Thiyanga Talagala, Earo Wang, Yangzhuoran Yang and Mitchell O'Hara-Wild (2020). tsfeatures: Time Series Feature Extraction. R package version 1.0.2. https://CRAN.R-project.org/package=tsfeatures

@@ -34,7 +34,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                      column(2),
                                      column(11,
                                             h3("Initial Dataset Upload"),
-                                            p("To get started, please use the widget below to upload your datafile depending on whether you have a single file with all information (e.g. a long or 'tidy' format) or a wide time series file and a corresponding metadata file (e.g. ID variables, class labels). Currently accepted formats are: .csv, .xlsx, .xls, .txt. More file types will be added soon. Please ensure there are no spaces in your variable names prior to uploading."),
+                                            p("To get started, please use the widget below to upload your datafile depending on whether you have a single file with all information (e.g. a long or 'tidy' format) or a wide time series file and a corresponding metadata file (e.g. ID variables, class labels) or a hctsa-formatted MATLAB file with the following 3 variables: 'keywords', 'labels', 'timeSeriesData'. Currently accepted formats are: .csv, .xlsx, .xls, .txt, .mat. More file types will be added soon. Please ensure there are no spaces in your variable names prior to uploading."),
                                             
                                             # Feature set selection
                                             
@@ -99,10 +99,20 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                                                 textInput("input_group_var_multi", "Enter the exact name of the grouping variable if one exists",
                                                                           value = "Enter the group variable name..."))
                                                          )
+                                                        ),
+                                              tabPanel("hctsa Formatted File",
+                                                       br(),
+                                                       p("Please ensure your file is formatted with the following 3 variables as per hctsa conventions: 'keywords', 'labels', 'timeSeriesData'."),
+                                                       fluidRow(
+                                                         column(2,
+                                                                fileInput("userUpload3", HTML("Upload your time series file"),
+                                                                          multiple = FALSE, accept = c(".mat", width = "600px"))
+                                                         )
                                                         )
                                                        )
                                                       )
-                                                     ),
+                                                     )
+                                                    ),
                             fluidRow(
                               column(2),
                               column(11,
