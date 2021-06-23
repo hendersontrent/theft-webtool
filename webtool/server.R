@@ -190,8 +190,7 @@ shinyServer <- function(input, output, session) {
         return(featureMatrix)
       }
     } else if(is.null(input$userUpload) && !is.null(input$userUpload2) && is.null(input$userUpload3)){
-      
-      if(str_detect(input$input_id_var_multi, " ")){
+      if(str_detect(input$input_id_var_multi, " ") ){
         
       } else {
         
@@ -220,6 +219,8 @@ shinyServer <- function(input, output, session) {
     } else if (!is.null(input$userUpload3) && is.null(input$userUpload2Meta) && is.null(input$userUpload) && is.null(input$userUpload2)){
       featureMatrix <- calculate_features(tmp(), id_var = "id", time_var = "timepoint", 
                                           values_var = "values", group_var = "group", feature_set = input$feature_set)
+      
+      return(featureMatrix)
     } else{
       
     }
@@ -296,16 +297,31 @@ shinyServer <- function(input, output, session) {
     
     if(input$selectID != "None"){
       
-      p <- tmp() %>%
-        filter(id == input$selectID) %>%
-        rename(timepoint = all_of(input$input_time_var)) %>%
-        rename(values = all_of(input$input_values_var)) %>%
-        ggplot(aes(x = timepoint, y = values, group = 1,
-                   text = paste('<b>ID:</b>', id,
-                                '<br><b>Timepoint:</b>', timepoint,
-                                '<br><b>Value:</b>', round(values, digits = 2)))) +
-        geom_line(size = 1.05, colour = "#FFBA67") +
-        theme_bw()
+      if(!is.null(input$userUpload)){
+        p <- tmp() %>%
+          filter(id == input$selectID) %>%
+          rename(timepoint = all_of(input$input_time_var)) %>%
+          rename(values = all_of(input$input_values_var)) %>%
+          ggplot(aes(x = timepoint, y = values, group = 1,
+                     text = paste('<b>ID:</b>', id,
+                                  '<br><b>Timepoint:</b>', timepoint,
+                                  '<br><b>Value:</b>', round(values, digits = 2)))) +
+          geom_line(colour = "#FFBA67") +
+          labs(x = "Timepoint",
+               y = "Value") +
+          theme_bw()
+      } else{
+        p <- tmp() %>%
+          filter(id == input$selectID) %>%
+          ggplot(aes(x = timepoint, y = values, group = 1,
+                     text = paste('<b>ID:</b>', id,
+                                  '<br><b>Timepoint:</b>', timepoint,
+                                  '<br><b>Value:</b>', round(values, digits = 2)))) +
+          geom_line(colour = "#FFBA67") +
+          labs(x = "Timepoint",
+               y = "Value") +
+          theme_bw()
+      }
       
       # Convert to interactive graphic
       
@@ -316,7 +332,7 @@ shinyServer <- function(input, output, session) {
     } else{
       
       validate(
-        need(featureMatrix(), "Please select a unique ID to generate the time-series plot."
+        need(tmp(), "Please select a unique ID to generate the time-series plot."
         )
       )
     }
