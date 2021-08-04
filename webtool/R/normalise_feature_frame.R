@@ -40,16 +40,6 @@ mm_function <- function(data){
   return(tmp)
 }
 
-ms_function <- function(data){
-  
-  tmp <- data %>%
-    dplyr::group_by(names) %>%
-    dplyr::mutate(values = normalise_feature_vector(values, method = "MeanSubtract")) %>%
-    dplyr::ungroup()
-  
-  return(tmp)
-}
-
 #------------------- Main function ---------------------------------
 
 #' Scale each feature vector into a user-specified range for visualisation and modelling
@@ -74,7 +64,7 @@ ms_function <- function(data){
 #'}
 #'
 
-normalise_feature_frame <- function(data, names_var = NULL, values_var = NULL, method = c("z-score", "Sigmoid", "RobustSigmoid", "MinMax", "MeanSubtract")){
+normalise_feature_frame <- function(data, names_var = NULL, values_var = NULL, method = c("z-score", "Sigmoid", "RobustSigmoid", "MinMax")){
   
   # Make RobustSigmoid the default
   
@@ -90,7 +80,7 @@ normalise_feature_frame <- function(data, names_var = NULL, values_var = NULL, m
   
   # Method selection
   
-  the_methods <- c("z-score", "Sigmoid", "RobustSigmoid", "MinMax", "MeanSubtract")
+  the_methods <- c("z-score", "Sigmoid", "RobustSigmoid", "MinMax")
   '%ni%' <- Negate('%in%')
   
   if(method %ni% the_methods){
@@ -127,10 +117,6 @@ normalise_feature_frame <- function(data, names_var = NULL, values_var = NULL, m
   
   if(method == "MinMax"){
     tmp <- mm_function(data = data)
-  }
-  
-  if(method == "MeanSubtract"){
-    tmp <- ms_function(data = data)
   }
   
   return(tmp)
@@ -159,7 +145,7 @@ normalise_feature_frame <- function(data, names_var = NULL, values_var = NULL, m
 #'   values_var = "values", method = "RobustSigmoid")
 #'}
 
-normalize_feature_frame <- function(data, names_var = NULL, values_var = NULL, method = c("z-score", "Sigmoid", "RobustSigmoid", "MinMax", "MeanSubtract")){
+normalize_feature_frame <- function(data, names_var = NULL, values_var = NULL, method = c("z-score", "Sigmoid", "RobustSigmoid", "MinMax")){
   
   # Make RobustSigmoid the default
   
@@ -175,7 +161,7 @@ normalize_feature_frame <- function(data, names_var = NULL, values_var = NULL, m
   
   # Method selection
   
-  the_methods <- c("z-score", "Sigmoid", "RobustSigmoid", "MinMax", "MeanSubtract")
+  the_methods <- c("z-score", "Sigmoid", "RobustSigmoid", "MinMax")
   '%ni%' <- Negate('%in%')
   
   if(method %ni% the_methods){
@@ -212,10 +198,6 @@ normalize_feature_frame <- function(data, names_var = NULL, values_var = NULL, m
   
   if(method == "MinMax"){
     tmp <- mm_function(data = data)
-  }
-  
-  if(method == "MeanSubtract"){
-    tmp <- ms_function(data = data)
   }
   
   return(tmp)
