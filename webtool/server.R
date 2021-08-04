@@ -306,7 +306,7 @@ shinyServer <- function(input, output, session) {
                      text = paste('<b>ID:</b>', id,
                                   '<br><b>Timepoint:</b>', timepoint,
                                   '<br><b>Value:</b>', round(values, digits = 2)))) +
-          geom_line(colour = "#FFBA67") +
+          geom_line(colour = "#ef6ade") +
           labs(x = "Timepoint",
                y = "Value") +
           theme_bw()
@@ -317,7 +317,7 @@ shinyServer <- function(input, output, session) {
                      text = paste('<b>ID:</b>', id,
                                   '<br><b>Timepoint:</b>', timepoint,
                                   '<br><b>Value:</b>', round(values, digits = 2)))) +
-          geom_line(colour = "#FFBA67") +
+          geom_line(colour = "#ef6ade") +
           labs(x = "Timepoint",
                y = "Value") +
           theme_bw()
@@ -378,9 +378,9 @@ shinyServer <- function(input, output, session) {
       } else {
         
         # Define a nice colour palette
-        # Palette from https://www.schemecolor.com/land-of-pastels.php
         
-        available_colours <- c("#E494D3", "#87DCC0", "#88BBE4", "#998AD3", "#CDF1AF")
+        available_colours <- c("#ef6ade", "#75eab6", "#2a6866", "#14bae1", "#ad0599", 
+                               "#513886", "#7f73ed", "#e4b8ec", "#0b29d0", "#3986da")
         
         # Draw graphic
         

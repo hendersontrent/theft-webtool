@@ -9,7 +9,7 @@
 #' outs <- normalise_feature_vector(data, method = "RobustSigmoid")
 #'
 
-normalise_feature_vector <- function(x, method = c("z-score", "Sigmoid", "RobustSigmoid", "MinMax", "MeanSubtract")){
+normalise_feature_vector <- function(x, method = c("z-score", "Sigmoid", "RobustSigmoid", "MinMax")){
   
   # Make RobustSigmoid the default
   
@@ -29,7 +29,7 @@ normalise_feature_vector <- function(x, method = c("z-score", "Sigmoid", "Robust
   
   # Method selection
   
-  the_methods <- c("z-score", "Sigmoid", "RobustSigmoid", "MinMax", "MeanSubtract")
+  the_methods <- c("z-score", "Sigmoid", "RobustSigmoid", "MinMax")
   '%ni%' <- Negate('%in%')
   
   if(method %ni% the_methods){
@@ -56,10 +56,6 @@ normalise_feature_vector <- function(x, method = c("z-score", "Sigmoid", "Robust
   
   if(method == "MinMax"){
     x_norm <- minmax_scaler(x)
-  }
-  
-  if(method == "MeanSubtract"){
-    x_norm <- mean_scaler(x)
   }
   
   return(x_norm)
@@ -77,7 +73,7 @@ normalise_feature_vector <- function(x, method = c("z-score", "Sigmoid", "Robust
 #' outs <- normalize_feature_vector(data, method = "RobustSigmoid")
 #'
 
-normalize_feature_vector <- function(x, method = c("z-score", "Sigmoid", "RobustSigmoid", "MinMax", "MeanSubtract")){
+normalize_feature_vector <- function(x, method = c("z-score", "Sigmoid", "RobustSigmoid", "MinMax")){
   
   # Make RobustSigmoid the default
   
@@ -97,7 +93,7 @@ normalize_feature_vector <- function(x, method = c("z-score", "Sigmoid", "Robust
   
   # Method selection
   
-  the_methods <- c("z-score", "Sigmoid", "RobustSigmoid", "MinMax", "MeanSubtract")
+  the_methods <- c("z-score", "Sigmoid", "RobustSigmoid", "MinMax")
   '%ni%' <- Negate('%in%')
   
   if(method %ni% the_methods){
@@ -124,10 +120,6 @@ normalize_feature_vector <- function(x, method = c("z-score", "Sigmoid", "Robust
   
   if(method == "MinMax"){
     x_norm <- minmax_scaler(x)
-  }
-  
-  if(method == "MeanSubtract"){
-    x_norm <- mean_scaler(x)
   }
   
   return(x_norm)

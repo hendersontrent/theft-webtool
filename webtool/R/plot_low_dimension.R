@@ -191,10 +191,9 @@ plot_low_dimension <- function(data, is_normalised = FALSE, id_var = NULL, group
       dplyr::inner_join(groups, by = c("id" = "id"))
     
     # Define a nice colour palette
-    # Palette from https://www.schemecolor.com/land-of-pastels.php
     
-    available_colours <- c("#E494D3", "#87DCC0", "#88BBE4", "#998AD3", "#CDF1AF",
-                           "#FDD1D2", "#FBEDE0", "#96D4CC", "#D4BBDD")
+    available_colours <- c("#ef6ade", "#75eab6", "#2a6866", "#14bae1", "#ad0599", 
+                           "#513886", "#7f73ed", "#e4b8ec", "#0b29d0", "#3986da")
     
     # Draw plot
     
