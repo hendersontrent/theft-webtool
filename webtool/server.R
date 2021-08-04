@@ -295,38 +295,59 @@ shinyServer <- function(input, output, session) {
       )
     )
     
+    # Define a nice colour palette
+    
+    available_colours <- c("#ef6ade", "#75eab6", "#2a6866", "#14bae1", "#ad0599", 
+                           "#513886", "#7f73ed", "#e4b8ec", "#0b29d0", "#3986da")
+    
     if(input$selectID != "None"){
-      
-      if(!is.null(input$userUpload)){
+      if(!is.null(input$userUpload) && is.null(input$userUpload2) && is.null(input$userUpload3)){
+        if(str_detect(input$input_id_var, " ") || str_detect(input$input_time_var, " ") || str_detect(input$input_values_var, " ")){
+        } else{
+            p <- tmp() %>%
+              rename(id = all_of(input$input_id_var)) %>%
+              rename(timepoint = all_of(input$input_time_var)) %>%
+              rename(values = all_of(input$input_values_var)) %>%
+              filter(id == input$selectID) %>%
+              ggplot(aes(x = timepoint, y = values, group = 1,
+                         text = paste('<b>ID:</b>', id,
+                                      '<br><b>Timepoint:</b>', timepoint,
+                                      '<br><b>Value:</b>', round(values, digits = 2)))) +
+              geom_line(colour = "#3986da") +
+              labs(x = "Timepoint",
+                   y = "Value") +
+              theme_bw()
+          }
+      } else if(!is.null(input$userUpload2) && !is.null(input$userUpload2Meta) && is.null(input$userUpload) && is.null(input$userUpload3)){
         p <- tmp() %>%
+          rename(id = all_of(input$input_id_var_multi)) %>%
           filter(id == input$selectID) %>%
-          rename(timepoint = all_of(input$input_time_var)) %>%
-          rename(values = all_of(input$input_values_var)) %>%
           ggplot(aes(x = timepoint, y = values, group = 1,
                      text = paste('<b>ID:</b>', id,
                                   '<br><b>Timepoint:</b>', timepoint,
                                   '<br><b>Value:</b>', round(values, digits = 2)))) +
-          geom_line(colour = "#ef6ade") +
+          geom_line(colour = "#3986da") +
+          labs(x = "Timepoint",
+               y = "Value") +
+          theme_bw()
+      } else if(!is.null(input$userUpload3) && is.null(input$userUpload2Meta) && is.null(input$userUpload) && is.null(input$userUpload2)){
+        p <- tmp() %>%
+          filter(id == input$selectID) %>%
+          ggplot(aes(x = timepoint, y = values, group = 1,
+                     text = paste('<b>ID:</b>', id,
+                                  '<br><b>Timepoint:</b>', timepoint,
+                                  '<br><b>Value:</b>', round(values, digits = 2)))) +
+          geom_line(colour = "#3986da") +
           labs(x = "Timepoint",
                y = "Value") +
           theme_bw()
       } else{
-        p <- tmp() %>%
-          filter(id == input$selectID) %>%
-          ggplot(aes(x = timepoint, y = values, group = 1,
-                     text = paste('<b>ID:</b>', id,
-                                  '<br><b>Timepoint:</b>', timepoint,
-                                  '<br><b>Value:</b>', round(values, digits = 2)))) +
-          geom_line(colour = "#ef6ade") +
-          labs(x = "Timepoint",
-               y = "Value") +
-          theme_bw()
+        
       }
       
       # Convert to interactive graphic
       
       p_int <- ggplotly(p, tooltip = c("text")) %>%
-        layout(legend = list(orientation = "h", x = 0, y = -0.2)) %>%
         config(displayModeBar = FALSE)
       
     } else{

@@ -211,14 +211,14 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                        tabPanel("Matrix Visualisations",
                                 fluidRow(
                                   column(11,
-                                         h3("Unique ID x Unique ID Correlation Matrix"),
-                                         shinycssloaders::withSpinner(plotlyOutput("feat_mat_plot", height = "750px"))
-                                 )
+                                         h3("Data Matrix"),
+                                         shinycssloaders::withSpinner(plotlyOutput("id_by_feat_plot", height = "750px"))
+                                  )
                                 ),
                                 fluidRow(
                                   column(11,
-                                         h3("Unique ID x Feature Cluster Matrix"),
-                                         shinycssloaders::withSpinner(plotlyOutput("id_by_feat_plot", height = "750px"))
+                                         h3("Pairwise Correlation Matrix"),
+                                         shinycssloaders::withSpinner(plotlyOutput("feat_mat_plot", height = "750px"))
                          )
                         )
                        )
@@ -231,7 +231,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                    
                    tabPanel(navtab4,
                             fluidRow(h1("Classification Performance")),
-                            fluidRow(p("Classification functionality coming soon."))),
+                            fluidRow(p("Automatic classification functionality coming soon."))),
                    
                    #------------------ About page ----------------
                    
