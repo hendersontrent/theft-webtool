@@ -295,11 +295,6 @@ shinyServer <- function(input, output, session) {
       )
     )
     
-    # Define a nice colour palette
-    
-    available_colours <- c("#ef6ade", "#75eab6", "#2a6866", "#14bae1", "#ad0599", 
-                           "#513886", "#7f73ed", "#e4b8ec", "#0b29d0", "#3986da")
-    
     if(input$selectID != "None"){
       if(!is.null(input$userUpload) && is.null(input$userUpload2) && is.null(input$userUpload3)){
         if(str_detect(input$input_id_var, " ") || str_detect(input$input_time_var, " ") || str_detect(input$input_values_var, " ")){
@@ -313,7 +308,7 @@ shinyServer <- function(input, output, session) {
                          text = paste('<b>ID:</b>', id,
                                       '<br><b>Timepoint:</b>', timepoint,
                                       '<br><b>Value:</b>', round(values, digits = 2)))) +
-              geom_line(colour = "#3986da") +
+              geom_line(colour = "#666666") +
               labs(x = "Timepoint",
                    y = "Value") +
               theme_bw()
@@ -326,7 +321,7 @@ shinyServer <- function(input, output, session) {
                      text = paste('<b>ID:</b>', id,
                                   '<br><b>Timepoint:</b>', timepoint,
                                   '<br><b>Value:</b>', round(values, digits = 2)))) +
-          geom_line(colour = "#3986da") +
+          geom_line(colour = "#666666") +
           labs(x = "Timepoint",
                y = "Value") +
           theme_bw()
@@ -337,7 +332,7 @@ shinyServer <- function(input, output, session) {
                      text = paste('<b>ID:</b>', id,
                                   '<br><b>Timepoint:</b>', timepoint,
                                   '<br><b>Value:</b>', round(values, digits = 2)))) +
-          geom_line(colour = "#3986da") +
+          geom_line(colour = "#666666") +
           labs(x = "Timepoint",
                y = "Value") +
           theme_bw()
@@ -398,11 +393,6 @@ shinyServer <- function(input, output, session) {
       if("group" %ni% colsList){
       } else {
         
-        # Define a nice colour palette
-        
-        available_colours <- c("#ef6ade", "#75eab6", "#2a6866", "#14bae1", "#ad0599", 
-                               "#513886", "#7f73ed", "#e4b8ec", "#0b29d0", "#3986da")
-        
         # Draw graphic
         
         p <- featureMatrix() %>%
@@ -412,7 +402,7 @@ shinyServer <- function(input, output, session) {
           geom_point(size = 1, alpha = 0.7, position = position_jitter(w = 0.05)) +
           labs(x = "Group",
                y = "Value") +
-          scale_color_manual(values = available_colours) +
+          ggplot2::scale_colour_brewer(palette = "Dark2") +
           theme_bw() +
           theme(panel.grid.minor = element_blank(),
                 legend.position = "none",

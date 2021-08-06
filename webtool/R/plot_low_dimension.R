@@ -190,11 +190,6 @@ plot_low_dimension <- function(data, is_normalised = FALSE, id_var = NULL, group
     fits <- fits %>%
       dplyr::inner_join(groups, by = c("id" = "id"))
     
-    # Define a nice colour palette
-    
-    available_colours <- c("#ef6ade", "#75eab6", "#2a6866", "#14bae1", "#ad0599", 
-                           "#513886", "#7f73ed", "#e4b8ec", "#0b29d0", "#3986da")
-    
     # Draw plot
     
     if(highlight == "No"){
@@ -238,7 +233,7 @@ plot_low_dimension <- function(data, is_normalised = FALSE, id_var = NULL, group
       }
       
       p <- p +
-        ggplot2::scale_color_manual(values = available_colours) +
+        ggplot2::scale_colour_brewer(palette = "Dark2") +
         ggplot2::theme_bw() +
         ggplot2::theme(panel.grid.major = ggplot2::element_blank(),
                        panel.grid.minor = ggplot2::element_blank(),
@@ -284,7 +279,7 @@ plot_low_dimension <- function(data, is_normalised = FALSE, id_var = NULL, group
                         colour = "Group")
       }
       p <- p +
-        ggplot2::scale_color_manual(values = available_colours) +
+        ggplot2::scale_colour_brewer(palette = "Dark2") +
         ggplot2::theme_bw() +
         ggplot2::theme(panel.grid.major = ggplot2::element_blank(),
                        panel.grid.minor = ggplot2::element_blank(),
