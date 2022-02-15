@@ -434,6 +434,59 @@ shinyServer <- function(input, output, session) {
   
   #------------------ Classifier page ------------------
   
+  #------------------------
+  # Multivariate classifier
+  #------------------------
   
+  # Fit model
+  
+  
+  
+  # Draw plot
+  
+  output$by_set_plot <- renderPlotly({
+    
+    # Account for lack of data upload to avoid error message
+    
+    validate(
+      need(featureMatrix(), "Please upload a dataset to get started."
+      )
+    )
+    
+  })
+  
+  #----------------------
+  # Univariate classifier
+  #----------------------
+  
+  # Fit model
+  
+  
+  
+  # Draw top feature correlation plot
+  
+  output$top_feature_cor_plot <- renderPlotly({
+    
+    # Account for lack of data upload to avoid error message
+    
+    validate(
+      need(featureMatrix(), "Please upload a dataset to get started."
+      )
+    )
+    
+  })
+  
+  # Draw top feature violin plot
+  
+  output$top_feature_violin_plot <- renderPlotly({
+    
+    # Account for lack of data upload to avoid error message
+    
+    validate(
+      need(featureMatrix(), "Please upload a dataset to get started."
+      )
+    )
+    
+  })
   
 }

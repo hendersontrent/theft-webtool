@@ -236,7 +236,74 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                    
                    tabPanel(navtab4,
                             fluidRow(h1("Automated Time-Series Classification")),
-                            fluidRow(p("Coming soon..."))),
+                            sidebarLayout(
+                              sidebarPanel(
+                                h2("Page Information"),
+                                p("This page automates time-series classification using univariate or multivariate features as inputs to algorithms."),
+                                h3("General Controls"),
+                                selectInput("classifierSelect", "Select a classification algorithm",
+                                            choices = classifiers, selected = classifiers[51], multiple = FALSE),
+                                br(),
+                                radioButtons("empiricalnullSelect", "Do you want to use an empirical null procedure to estimate p-values?", 
+                                             choices = binaries, selected = binaries[1], inline = TRUE),
+                                br(),
+                                sliderInput("kfoldSlider", "If using empirical null, how many random class label shuffles do you want to use?",
+                                            min = 1, max = 200, value = 50),
+                                br(),
+                                radioButtons("kfoldSelect", "Do you want to use k-fold cross-validation?", 
+                                             choices = binaries, selected = binaries[1], inline = TRUE),
+                                br(),
+                                sliderInput("kfoldSlider", "If using k-fold cross-validation, how many folds do you want to use?",
+                                            min = 1, max = 30, value = 10),
+                                br(),
+                                sliderInput("splitpropSlider", "What proportion of your data do you want in the train set?",
+                                            min = 0.1, max = 0.9, value = 0.8, step = 0.05),
+                                br(),
+                                radioButtons("balancedaccuracySelect", "Do you want to use balanced classification accuracy instead of overall classification accuracy?", 
+                                             choices = binaries, selected = binaries[2], inline = TRUE),
+                                hr(),
+                                h3("Multivariate Algorithm Controls"),
+                                radioButtons("bysetSelect", "If you selected more than one feature set, do you want to analyse each feature set independently?", 
+                                             choices = binaries, selected = binaries[2], inline = TRUE),
+                                hr(),
+                                h3("Univariate Algorithm Controls"),
+                                radioButtons("normaliseviolinSelect", "Do you want to normalise y-axis for violin plots?", 
+                                             choices = binaries, selected = binaries[1], inline = TRUE),
+                                br(),
+                                selectInput("inputScalerUnivariate", "Select a normalisation method to apply prior to computing correlations between top features",
+                                            choices = all_scalers, selected = all_scalers[3], multiple = FALSE),
+                                br(),
+                                selectInput("corMethodUnivariate", "Select a correlation method to apply",
+                                            choices = cor_methods, selected = cor_methods[1], multiple = FALSE),
+                                br(),
+                                radioButtons("poolednullSelect", "If using empirical null, do you want to used a pooled empirical null (i.e., null distribution is null samples of all features)?", 
+                                             choices = binaries, selected = binaries[2], inline = TRUE),
+                              ),
+                              mainPanel(
+                                tabsetPanel(id = "classifier_tabs",
+                                            tabPanel("Multivariate Approach",
+                                                     fluidRow(
+                                                       column(11,
+                                                              shinycssloaders::withSpinner(plotlyOutput("by_set_plot", height = "750px"))
+                                                       )
+                                                     )
+                                            ),
+                                            tabPanel("Univariate Approach",
+                                                     fluidRow(
+                                                       column(11,
+                                                              shinycssloaders::withSpinner(plotlyOutput("top_feature_cor_plot", height = "750px"))
+                                                       )
+                                                     ),
+                                                     fluidRow(
+                                                       column(11,
+                                                              shinycssloaders::withSpinner(plotlyOutput("top_feature_violin_plot", height = "750px"))
+                                                       )
+                                                     )
+                              )
+                             )
+                            )
+                           )
+                          ),
                    
                    #------------------ About page ----------------
                    

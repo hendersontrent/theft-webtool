@@ -83,8 +83,7 @@ plot_quality_matrix <- function(data){
                                               '<br><b>Data Type:</b>', quality,
                                               '<br><b>Proportion:</b>', round(props, digits = 2)))) +
     ggplot2::geom_bar(stat = "identity", ggplot2::aes(fill = quality)) +
-    ggplot2::labs(title = "Data quality for computed features",
-                  x = "Feature",
+    ggplot2::labs(x = "Feature",
                   y = "Proportion of Outputs",
                   fill = "Data Type") +
     ggplot2::scale_y_continuous(limits = c(0,1),
@@ -96,9 +95,9 @@ plot_quality_matrix <- function(data){
   
   #-------- Convert to interactive graphic --------
   
-  p <- ggplotly(p, tooltip = c("text")) %>%
+  p <- plotly::ggplotly(p, tooltip = c("text")) %>%
     layout(legend = list(orientation = "h", x = 0, y = -0.2)) %>%
-    config(displayModeBar = FALSE)
+    plotly::config(displayModeBar = FALSE)
 
   return(p)
 }

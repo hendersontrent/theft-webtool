@@ -40,6 +40,13 @@ for(f in import_files){
   assign(object_name, readLines(f, warn = FALSE))
 }
 
+# Load in caret model list
+
+data_files <- list.files("data", full.names = TRUE, pattern = "\\.Rda")
+for(d in data_files){
+  load(d)
+}
+
 # Load in any R functions
 
 r_files <- list.files("R", full.names = TRUE, pattern = "\\.[Rr]")
@@ -52,7 +59,7 @@ for(f in r_files){
 navtab0 <- "HOME"
 navtab1 <- "LOW DIMENSIONAL PROJECTION"
 navtab2 <- "FEATURE CALCULATION QUALITY"
-navtab3 <- "DATA MATRIX VISUALISATIONS"
+navtab3 <- "DATA MATRIX VISUALISATION"
 navtab4 <- "TIME-SERIES CLASSIFICATION"
 navtab5 <- "ABOUT"
 
@@ -67,3 +74,4 @@ featuresets <- c("catch22", "feasts", "tsfeatures")
 binaries <- c("No", "Yes")
 lowdims <- c("PCA", "t-SNE")
 cor_methods <- c("pearson", "spearman")
+classifiers <- unique(caretModels$model)
