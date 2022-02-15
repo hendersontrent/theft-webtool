@@ -126,11 +126,11 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                    #------------------ Low dim page --------------
                    
                    tabPanel(navtab1,
-                            fluidRow(h1("Low Dimension Visualisation")),
+                            fluidRow(h1("Low Dimensional Projection")),
                             sidebarLayout(
                               sidebarPanel(
                                 h2("Page Information"),
-                                p("This page visualises the time series features in a low-dimensional representation."),
+                                p("This page projects the extracted feature matrix into a low dimensional projection."),
                                 h3("Plotting Controls"),
                                 selectInput("inputScaler", "Select a rescaling function to apply prior to performing dimension reduction",
                                             choices = all_scalers, selected = all_scalers[3], multiple = FALSE),
@@ -138,7 +138,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                 radioButtons("low_dimSelect", "Select a low dimension method to use", 
                                              choices = lowdims, selected = lowdims[1], inline = TRUE),
                                 br(),
-                                sliderInput("covarianceSlider", "If using PCA, do you want to show covariance ellipses?",
+                                radioButtons("covarianceSlider", "If using PCA, do you want to show covariance ellipses?",
                                             choices = binaries, selected = binaries[1], inline = TRUE),
                                 br(),
                                 sliderInput("perplexitySlider", "If using t-SNE, select a perplexity hyperparameter value",
@@ -192,16 +192,16 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                    #------------------ Matrix page ---------------
                    
                    tabPanel(navtab3,
-                            fluidRow(h1("Additional Visualisations")),
+                            fluidRow(h1("Data Matrix Visualisations")),
                             sidebarLayout(
                               sidebarPanel(
                                 h2("Page Information"),
                                 p("This page visualises various data matrices."),
                                 br(),
-                                selectInput("inputScaler2", "Select a normalisation function to apply.",
+                                selectInput("inputScaler2", "Select a normalisation function to apply",
                                             choices = all_scalers, selected = all_scalers[3], multiple = FALSE),
                                 br(),
-                                selectInput("corMethod", "Select a correlation method to apply.",
+                                selectInput("corMethod", "Select a correlation method to apply",
                                             choices = cor_methods, selected = cor_methods[1], multiple = FALSE)
                               ),
                               mainPanel(
