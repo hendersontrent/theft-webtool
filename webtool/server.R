@@ -403,7 +403,7 @@ shinyServer <- function(input, output, session) {
     
     # Render plot
     
-    plot_connectivity_matrix(data = featureMatrix(), is_normalised = FALSE, id_var = "id", names_var = "names", values_var = "values",
+    plot_feature_correlations(data = featureMatrix(), is_normalised = FALSE, id_var = "id", names_var = "names", values_var = "values",
                              method = input$inputScaler2, interactive = TRUE)
   })
   

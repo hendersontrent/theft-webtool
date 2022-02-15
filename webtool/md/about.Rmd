@@ -19,7 +19,7 @@ This application was developed by [Trent Henderson](https://twitter.com/trentlik
 
 There are numerous resources associated with this application. Some of these are linked below.
 
-* T. Henderson and B. D. Fulcher. [`An Empirical Evaluation of Time-Series Feature Sets`](https://ieeexplore.ieee.org/document/9679937). 2021 International Conference on Data Mining Workshops (ICDMW), (2022).
+* T. Henderson and B. D. Fulcher. [An Empirical Evaluation of Time-Series Feature Sets](https://ieeexplore.ieee.org/document/9679937). 2021 International Conference on Data Mining Workshops (ICDMW), (2022).
 * [`hctsa`](https://github.com/benfulcher/hctsa) software toolbox for MATLAB
 * B.D. Fulcher and N.S. Jones. [hctsa: A computational framework for automated time-series phenotyping using massive feature extraction](https://www.cell.com/cell-systems/fulltext/S2405-4712(17)30438-6). Cell Systems 5, 527 (2017).
 * B.D. Fulcher, M.A. Little, N.S. Jones. [Highly comparative time-series analysis: the empirical structure of time series and their methods](https://royalsocietypublishing.org/doi/full/10.1098/rsif.2013.0048). J. Roy. Soc. Interface 10, 83 (2013).
