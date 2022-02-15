@@ -50,10 +50,10 @@ for(f in r_files){
 # Define tab names
 
 navtab0 <- "HOME"
-navtab1 <- "LOW DIMENSION VISUALISATION"
+navtab1 <- "LOW DIMENSIONAL PROJECTION"
 navtab2 <- "FEATURE CALCULATION QUALITY"
-navtab3 <- "ADDITIONAL VISUALISATIONS"
-navtab4 <- "CLASSIFICATION PERFORMANCE"
+navtab3 <- "DATA MATRIX VISUALISATIONS"
+navtab4 <- "TIME-SERIES CLASSIFICATION"
 navtab5 <- "ABOUT"
 
 # Turn off scientific notation
@@ -66,3 +66,4 @@ all_scalers <- c("z-score", "Sigmoid", "RobustSigmoid", "MinMax")
 featuresets <- c("catch22", "feasts", "tsfeatures")
 binaries <- c("No", "Yes")
 lowdims <- c("PCA", "t-SNE")
+cor_methods <- c("pearson", "spearman")

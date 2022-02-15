@@ -129,7 +129,7 @@ shinyServer <- function(input, output, session) {
          )
          
          if(endsWith(matlabdat$name, ".mat")){
-           mydat <- welcome_mat(matlabdat$datapath)
+           mydat <- process_hctsa_file(matlabdat$datapath)
          }
          return(mydat)
        } else{
@@ -273,12 +273,12 @@ shinyServer <- function(input, output, session) {
       
       plot_low_dimension(featureMatrix(), is_normalised = FALSE, id_var = "id", group_var = NULL, 
                          method = input$inputScaler, plot = TRUE, highlight = input$pca_highlighter, id_filt = input$selectID,
-                         low_dim_method = input$low_dimSelect, perplexity = input$perplexitySlider)
+                         low_dim_method = input$low_dimSelect, perplexity = input$perplexitySlider, show_covariance = input$covarianceSlider)
     } else{
       
       plot_low_dimension(featureMatrix(), is_normalised = FALSE, id_var = "id", group_var = "group", 
                          method = input$inputScaler, plot = TRUE, highlight = input$pca_highlighter, id_filt = input$selectID,
-                         low_dim_method = input$low_dimSelect, perplexity = input$perplexitySlider)
+                         low_dim_method = input$low_dimSelect, perplexity = input$perplexitySlider, show_covariance = input$covarianceSlider)
     }
   })
   
@@ -370,72 +370,9 @@ shinyServer <- function(input, output, session) {
   
   #------------------ Matrix page ---------------
   
+  #------------------
   # ID x Feature plot
-  
-  output$discrim_plot <- renderPlotly({
-    
-    # Account for lack of data upload to avoid error message
-    
-    validate(
-      need(featureMatrix(), "Please upload a dataset to get started."
-      )
-    )
-    
-    if(input$feature_set != "catch22"){
-      return()
-    } else{
-      
-      # Draw plot
-      
-      colsList <- colnames(featureMatrix())
-      '%ni%' <- Negate('%in%')
-      
-      if("group" %ni% colsList){
-      } else {
-        
-        # Draw graphic
-        
-        p <- featureMatrix() %>%
-          mutate(group = as.factor(group)) %>%
-          ggplot(aes(x = group, y = values, colour = group)) +
-          geom_violin() +
-          geom_point(size = 1, alpha = 0.7, position = position_jitter(w = 0.05)) +
-          labs(x = "Group",
-               y = "Value") +
-          ggplot2::scale_colour_brewer(palette = "Dark2") +
-          theme_bw() +
-          theme(panel.grid.minor = element_blank(),
-                legend.position = "none",
-                strip.background = element_blank()) +
-          facet_wrap(~names, ncol = 4, scales = "free_y")
-        
-        # Convert to interactive graphic
-        
-        p_int <- ggplotly(p, tooltip = c("text")) %>%
-          layout(legend = list(orientation = "h", x = 0, y = -0.2)) %>%
-          config(displayModeBar = FALSE)
-     }
-    }
-  })
-  
-  # ID x Feature plot
-  
-  output$feat_mat_plot <- renderPlotly({
-    
-    # Account for lack of data upload to avoid error message
-    
-    validate(
-      need(featureMatrix(), "Please upload a dataset to get started."
-      )
-    )
-    
-    # Render plot
-    
-    plot_connectivity_matrix(data = featureMatrix(), is_normalised = FALSE, id_var = "id", names_var = "names", values_var = "values",
-                             method = input$inputScaler2)
-  })
-  
-  # Feature x Feature plot
+  #------------------
   
   output$id_by_feat_plot <- renderPlotly({
     
@@ -448,10 +385,48 @@ shinyServer <- function(input, output, session) {
     
     # Render plot
     
-    plot_feature_matrix(data = featureMatrix(), id_var = "id", is_normalised = FALSE, method = input$inputScaler2)
+    plot_feature_matrix(data = featureMatrix(), id_var = "id", is_normalised = FALSE, method = input$inputScaler2, interactive = TRUE)
   })
   
-  #------------------ Classifier page -----------
+  #-----------------------
+  # Feature x Feature plot
+  #-----------------------
+  
+  output$feat_by_feat_plot <- renderPlotly({
+    
+    # Account for lack of data upload to avoid error message
+    
+    validate(
+      need(featureMatrix(), "Please upload a dataset to get started."
+      )
+    )
+    
+    # Render plot
+    
+    plot_connectivity_matrix(data = featureMatrix(), is_normalised = FALSE, id_var = "id", names_var = "names", values_var = "values",
+                             method = input$inputScaler2, interactive = TRUE)
+  })
+  
+  #-------------------------------
+  # Time Series x Time Series plot
+  #-------------------------------
+  
+  output$id_by_id_plot <- renderPlotly({
+    
+    # Account for lack of data upload to avoid error message
+    
+    validate(
+      need(tmp(), "Please upload a dataset to get started."
+      )
+    )
+    
+    # Render plot
+    
+    plot_ts_correlations(data = tmp(), is_normalised = FALSE, id_var = "id", names_var = "names", values_var = "values",
+                         method = input$inputScaler2, cor_method = input$corMethod, interactive = TRUE)
+  })
+  
+  #------------------ Classifier page ------------------
   
   
   

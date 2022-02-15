@@ -138,6 +138,9 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                 radioButtons("low_dimSelect", "Select a low dimension method to use", 
                                              choices = lowdims, selected = lowdims[1], inline = TRUE),
                                 br(),
+                                sliderInput("covarianceSlider", "If using PCA, do you want to show covariance ellipses?",
+                                            choices = binaries, selected = binaries[1], inline = TRUE),
+                                br(),
                                 sliderInput("perplexitySlider", "If using t-SNE, select a perplexity hyperparameter value",
                                             min = 2, max = 100, value = 30),
                                 br(),
@@ -174,7 +177,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                             sidebarLayout(
                               sidebarPanel(
                                 h2("Page Information"),
-                                p("This page visualises the quality of the calculated feature matrix by computing amounts of each data type."),
+                                p("This page visualises the quality of the calculated feature matrix by computing proportions of data types."),
                               ),
                               mainPanel(fluidRow(
                                 column(11,
@@ -193,32 +196,34 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                             sidebarLayout(
                               sidebarPanel(
                                 h2("Page Information"),
-                                p("This page visualises the time series feature matrix as an array of different data visualisations. All data is scaled and hierarchically-clustered prior to heatmap plotting."),
+                                p("This page visualises various data matrices."),
                                 br(),
-                                selectInput("inputScaler2", "Select a rescaling function to apply prior to producing matrix visualisations.",
-                                            choices = all_scalers, selected = all_scalers[3], multiple = FALSE)
+                                selectInput("inputScaler2", "Select a normalisation function to apply.",
+                                            choices = all_scalers, selected = all_scalers[3], multiple = FALSE),
+                                br(),
+                                selectInput("corMethod", "Select a correlation method to apply.",
+                                            choices = cor_methods, selected = cor_methods[1], multiple = FALSE)
                               ),
                               mainPanel(
                                 tabsetPanel(id = "matrix_tabs",
-                                            tabPanel("Discriminant Visualisations",
+                                            tabPanel("Time Series x Feature Matrix",
                                                      fluidRow(
                                 column(11,
-                                  h3("Top Discriminating Features"),
-                                  shinycssloaders::withSpinner(plotlyOutput("discrim_plot", height = "1250px"))
+                                  shinycssloaders::withSpinner(plotlyOutput("id_by_feat_plot", height = "750px"))
                          )
                         )
                        ),
-                       tabPanel("Matrix Visualisations",
+                       tabPanel("Feature x Feature Matrix",
                                 fluidRow(
                                   column(11,
-                                         h3("Data Matrix"),
-                                         shinycssloaders::withSpinner(plotlyOutput("id_by_feat_plot", height = "750px"))
+                                         shinycssloaders::withSpinner(plotlyOutput("feat_by_feat_plot", height = "750px"))
                                   )
+                                 )
                                 ),
+                       tabPanel("Time Series x Time Series Matrix",
                                 fluidRow(
                                   column(11,
-                                         h3("Pairwise Correlation Matrix"),
-                                         shinycssloaders::withSpinner(plotlyOutput("feat_mat_plot", height = "750px"))
+                                         shinycssloaders::withSpinner(plotlyOutput("id_by_id_plot", height = "750px"))
                          )
                         )
                        )
@@ -230,8 +235,8 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                    #------------------ Classifier page -----------
                    
                    tabPanel(navtab4,
-                            fluidRow(h1("Classification Performance")),
-                            fluidRow(p("Automatic classification functionality coming soon."))),
+                            fluidRow(h1("Automated Time-Series Classification")),
+                            fluidRow(p("Coming soon..."))),
                    
                    #------------------ About page ----------------
                    
