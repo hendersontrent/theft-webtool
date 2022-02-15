@@ -78,7 +78,10 @@ plot_quality_matrix <- function(data){
   # Plot
 
   p <- tmp1 %>%
-    ggplot2::ggplot(ggplot2::aes(x = stats::reorder(names, -ranker), y = props)) +
+    ggplot2::ggplot(ggplot2::aes(x = stats::reorder(names, -ranker), y = props,
+                                 text = paste('<b>Feature:</b>', names,
+                                              '<br><b>Data Type:</b>', quality,
+                                              '<br><b>Proportion:</b>', round(props, digits = 2)))) +
     ggplot2::geom_bar(stat = "identity", ggplot2::aes(fill = quality)) +
     ggplot2::labs(title = "Data quality for computed features",
                   x = "Feature",
@@ -89,7 +92,6 @@ plot_quality_matrix <- function(data){
     ggplot2::scale_fill_manual(values = my_palette) +
     ggplot2::theme_bw() +
     ggplot2::theme(panel.grid = ggplot2::element_blank(),
-                   legend.position = "bottom",
                    axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
   
   #-------- Convert to interactive graphic --------

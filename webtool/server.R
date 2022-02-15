@@ -269,16 +269,22 @@ shinyServer <- function(input, output, session) {
     colsList <- colnames(featureMatrix())
     '%ni%' <- Negate('%in%')
     
+    if(input$covarianceSlider == "Yes"){
+      show_covariance_param <- TRUE
+    } else{
+      show_covariance_param <- FALSE
+    }
+    
     if("group" %ni% colsList){
       
       plot_low_dimension(featureMatrix(), is_normalised = FALSE, id_var = "id", group_var = NULL, 
                          method = input$inputScaler, plot = TRUE, highlight = input$pca_highlighter, id_filt = input$selectID,
-                         low_dim_method = input$low_dimSelect, perplexity = input$perplexitySlider, show_covariance = input$covarianceSlider)
+                         low_dim_method = input$low_dimSelect, perplexity = input$perplexitySlider, show_covariance = show_covariance_param)
     } else{
       
       plot_low_dimension(featureMatrix(), is_normalised = FALSE, id_var = "id", group_var = "group", 
                          method = input$inputScaler, plot = TRUE, highlight = input$pca_highlighter, id_filt = input$selectID,
-                         low_dim_method = input$low_dimSelect, perplexity = input$perplexitySlider, show_covariance = input$covarianceSlider)
+                         low_dim_method = input$low_dimSelect, perplexity = input$perplexitySlider, show_covariance = show_covariance_param)
     }
   })
   
@@ -422,7 +428,7 @@ shinyServer <- function(input, output, session) {
     
     # Render plot
     
-    plot_ts_correlations(data = tmp(), is_normalised = FALSE, id_var = "id", names_var = "names", values_var = "values",
+    plot_ts_correlations(data = tmp(), is_normalised = FALSE, id_var = "id", values_var = "values",
                          method = input$inputScaler2, cor_method = input$corMethod, interactive = TRUE)
   })
   

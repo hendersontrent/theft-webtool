@@ -43,7 +43,8 @@
 plot_low_dimension <- function(data, is_normalised = FALSE, id_var = "id", group_var = NULL, 
                                method = c("z-score", "Sigmoid", "RobustSigmoid", "MinMax"),
                                low_dim_method = c("PCA", "t-SNE"), perplexity = 30, 
-                               plot = TRUE, show_covariance = FALSE){
+                               plot = TRUE, show_covariance = FALSE,
+                               highlight = c("No", "Yes"), id_filt = NULL){
 
   # Make RobustSigmoid the default
 
@@ -222,35 +223,69 @@ plot_low_dimension <- function(data, is_normalised = FALSE, id_var = "id", group
         dplyr::mutate(id = as.factor(id))
       
       fits <- fits %>%
-        dplyr::inner_join(groups, by = c("id" = "id"))
-
-      # Draw plot
+        dplyr::inner_join(groups, by = c("id" = "id")) %>%
+        dplyr::mutate(group_id = as.factor(group_id))
       
-      p <- fits %>%
-          dplyr::mutate(group_id = as.factor(group_id)) %>%
-          ggplot2::ggplot(ggplot2::aes(x = .fitted1, y = .fitted2))
+      if(highlight == "Yes"){
+        
+        fitsfilt <- fits %>%
+          mutate(id = as.character(id)) %>%
+          filter(id != as.character(id_filt))
+        
+        idfilt <- fits %>%
+          mutate(id = as.character(id)) %>%
+          filter(id == as.character(id_filt))
+        
+        p <- fitsfilt %>%
+          ggplot2::ggplot(ggplot2::aes(x = .fitted1, y = .fitted2,
+                                       text = paste('<b>ID:</b>', id,
+                                                    '<br><b>Group:</b>', group_id,
+                                                    '<br><b>Component 1 Value:</b>', round(.fitted1, digits = 2),
+                                                    '<br><b>Component 2 Value:</b>', round(.fitted2, digits = 2))))
+        
+      } else{
+        
+        p <- fits %>%
+          ggplot2::ggplot(ggplot2::aes(x = .fitted1, y = .fitted2,
+                                       text = paste('<b>ID:</b>', id,
+                                                    '<br><b>Group:</b>', group_id,
+                                                    '<br><b>Component 1 Value:</b>', round(.fitted1, digits = 2),
+                                                    '<br><b>Component 2 Value:</b>', round(.fitted2, digits = 2))))
+      }
+      
+      # Draw plot
       
       if(show_covariance){
         p <- p +
           ggplot2::stat_ellipse(ggplot2::aes(x = .fitted1, y = .fitted2, fill = group_id), geom = "polygon", alpha = 0.2) +
           ggplot2::guides(fill = FALSE) +
           ggplot2::scale_fill_brewer(palette = "Dark2")
-      } else{
         
       }
 
       if(nrow(fits) > 200){
-        p <- p +
-          ggplot2::geom_point(size = 1.5, ggplot2::aes(colour = group_id))
+        if(highlight == "Yes"){
+          p <- p +
+            ggplot2::geom_point(size = 1.5, ggplot2::aes(colour = group_id), alpha = 0.3) +
+            ggplot2:::geom_point(data = idfilt, size = 4, ggplot2::aes(colour = group_id))
+        } else{
+          p <- p +
+            ggplot2::geom_point(size = 1.5, ggplot2::aes(colour = group_id))
+        }
       } else{
-        p <- p +
-          ggplot2::geom_point(size = 2.25, ggplot2::aes(colour = group_id))
+        if(highlight == "Yes"){
+          p <- p +
+            ggplot2::geom_point(size = 2.25, ggplot2::aes(colour = group_id), alpha = 0.3) +
+            ggplot2:::geom_point(data = idfilt, size = 4, ggplot2::aes(colour = group_id))
+        } else{
+          p <- p +
+            ggplot2::geom_point(size = 2.25, ggplot2::aes(colour = group_id))
+        }
       }
       
       if(low_dim_method == "PCA"){
         p <- p +
-          ggplot2::labs(title = "Low dimensional projection of time series",
-                        x = paste0("PC 1"," (",eigen_pc1,")"),
+          ggplot2::labs(x = paste0("PC 1"," (",eigen_pc1,")"),
                         y = paste0("PC 2"," (",eigen_pc2,")"),
                         colour = NULL) +
           ggplot2::scale_colour_brewer(palette = "Dark2") +
@@ -259,8 +294,7 @@ plot_low_dimension <- function(data, is_normalised = FALSE, id_var = "id", group
                          legend.position = "bottom")
       } else{
         p <- p +
-          ggplot2::labs(title = "Low dimensional projection of time series",
-                        x = "Dimension 1",
+          ggplot2::labs(x = "Dimension 1",
                         y = "Dimension 2",
                         colour = NULL) +
           ggplot2::scale_colour_brewer(palette = "Dark2") +
@@ -283,29 +317,63 @@ plot_low_dimension <- function(data, is_normalised = FALSE, id_var = "id", group
         fits <- fits %>%
           dplyr::mutate(id = as.factor(id))
       }
-
-      p <- fits %>%
-        ggplot2::ggplot(ggplot2::aes(x = .fitted1, y = .fitted2))
-
-      if(nrow(fits) > 200){
-        p <- p +
-          ggplot2::geom_point(size = 1.5, colour = "black")
+      
+      if(highlight == "Yes"){
+        
+        fitsfilt <- fits %>%
+          mutate(id = as.character(id)) %>%
+          filter(id != as.character(id_filt))
+        
+        idfilt <- fits %>%
+          mutate(id = as.character(id)) %>%
+          filter(id == as.character(id_filt))
+        
+        p <- fitsfilt %>%
+          dplyr::mutate(group_id = as.factor(group_id)) %>%
+          ggplot2::ggplot(ggplot2::aes(x = .fitted1, y = .fitted2,
+                                       text = paste('<b>ID:</b>', id,
+                                                    '<br><b>Component 1 Value:</b>', round(.fitted1, digits = 2),
+                                                    '<br><b>Component 2 Value:</b>', round(.fitted2, digits = 2))))
+        
       } else{
-        p <- p +
-          ggplot2::geom_point(size = 2, colour = "black")
+        
+        p <- fits %>%
+          dplyr::mutate(group_id = as.factor(group_id)) %>%
+          ggplot2::ggplot(ggplot2::aes(x = .fitted1, y = .fitted2,
+                                       text = paste('<b>ID:</b>', id,
+                                                    '<br><b>Component 1 Value:</b>', round(.fitted1, digits = 2),
+                                                    '<br><b>Component 2 Value:</b>', round(.fitted2, digits = 2))))
+      }
+      
+      if(nrow(fits) > 200){
+        if(highlight == "Yes"){
+          p <- p +
+            ggplot2::geom_point(size = 1.5, colour = "black", alpha = 0.3) +
+            ggplot2:::geom_point(data = idfilt, size = 4, colour = "black")
+        } else{
+          p <- p +
+            ggplot2::geom_point(size = 1.5, colour = "black")
+        }
+      } else{
+        if(highlight == "Yes"){
+          p <- p +
+            ggplot2::geom_point(size = 2.25, colour = "black", alpha = 0.3) +
+            ggplot2:::geom_point(data = idfilt, size = 4, colour = "black")
+        } else{
+          p <- p +
+            ggplot2::geom_point(size = 2.25, ggplot2::aes(colour = group_id))
+        }
       }
       
       if(low_dim_method == "PCA"){
         p <- p +
-          ggplot2::labs(title = "Low dimensional projection of time series",
-                        x = paste0("PC 1"," (",eigen_pc1,")"),
+          ggplot2::labs(x = paste0("PC 1"," (",eigen_pc1,")"),
                         y = paste0("PC 2"," (",eigen_pc2,")")) +
           ggplot2::theme_bw() +
           ggplot2::theme(panel.grid.minor = ggplot2::element_blank())
       } else{
         p <- p +
-          ggplot2::labs(title = "Low dimensional projection of time series",
-                        x = "Dimension 1",
+          ggplot2::labs(x = "Dimension 1",
                         y = "Dimension 2") +
           ggplot2::theme_bw() +
           ggplot2::theme(panel.grid.minor = ggplot2::element_blank())
