@@ -38,7 +38,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                             
                                             # Feature set selection
                                             
-                                            checkboxGroupInput("feature_set", "Select a feature set (or multiple) to use", 
+                                            checkboxGroupInput("feature_set", "Select a feature set (or multiple) to use. Note that tsfeatures and feasts will take considerably longer than catch22 to compute.", 
                                                                choices = featuresets, selected = featuresets[1], inline = TRUE),
                                             
                                             # Data uploads
@@ -282,6 +282,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                               mainPanel(
                                 tabsetPanel(id = "classifier_tabs",
                                             tabPanel("Multivariate Approach",
+                                                     fluidRow(p("Coming soon!")),
                                                      fluidRow(
                                                        column(11,
                                                               shinycssloaders::withSpinner(plotlyOutput("by_set_plot", height = "750px"))
@@ -289,6 +290,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                                      )
                                             ),
                                             tabPanel("Univariate Approach",
+                                                     fluidRow(p("Coming soon!")),
                                                      fluidRow(
                                                        column(11,
                                                               shinycssloaders::withSpinner(plotlyOutput("top_feature_cor_plot", height = "750px"))

@@ -34,6 +34,7 @@ library(caret)
 library(purrr)
 library(RColorBrewer)
 library(janitor)
+library(markdown)
 
 # Load in any HTML imports
 
