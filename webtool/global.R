@@ -8,6 +8,7 @@
 #-------------------------------------
 
 library(shiny)
+library(data.table)
 library(dplyr)
 library(magrittr)
 library(tidyr)
@@ -29,7 +30,10 @@ library(feasts)
 library(tsfeatures)
 library(Rtsne)
 library(R.matlab)
-library(data.table)
+library(caret)
+library(purrr)
+library(RColorBrewer)
+library(janitor)
 
 # Load in any HTML imports
 

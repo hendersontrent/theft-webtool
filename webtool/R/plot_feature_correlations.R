@@ -166,8 +166,7 @@ plot_feature_correlations <- function(data, is_normalised = FALSE, id_var = "id"
   
   p <- p +
     ggplot2::geom_tile(ggplot2::aes(fill = value)) +
-    ggplot2::labs(title = "Pairwise correlation matrix",
-                  x = NULL,
+    ggplot2::labs(x = NULL,
                   y = NULL,
                   fill = "Correlation coefficient") +
     ggplot2::scale_fill_distiller(palette = "RdBu", limits = c(-1,1)) +

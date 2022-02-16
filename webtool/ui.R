@@ -38,8 +38,8 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                             
                                             # Feature set selection
                                             
-                                            radioButtons("feature_set", "Select a feature set to use", 
-                                                                  choices = featuresets, selected = featuresets[1], inline = TRUE),
+                                            checkboxGroupInput("feature_set", "Select a feature set (or multiple) to use", 
+                                                               choices = featuresets, selected = featuresets[1], inline = TRUE),
                                             
                                             # Data uploads
                                             

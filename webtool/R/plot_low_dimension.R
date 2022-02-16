@@ -224,33 +224,24 @@ plot_low_dimension <- function(data, is_normalised = FALSE, id_var = "id", group
       
       fits <- fits %>%
         dplyr::inner_join(groups, by = c("id" = "id")) %>%
-        dplyr::mutate(group_id = as.factor(group_id))
+        dplyr::mutate(group_id = as.factor(group_id)) %>%
+        mutate(id = as.character(id))
       
       if(highlight == "Yes"){
         
         fitsfilt <- fits %>%
-          mutate(id = as.character(id)) %>%
           filter(id != as.character(id_filt))
         
         idfilt <- fits %>%
-          mutate(id = as.character(id)) %>%
           filter(id == as.character(id_filt))
         
         p <- fitsfilt %>%
-          ggplot2::ggplot(ggplot2::aes(x = .fitted1, y = .fitted2,
-                                       text = paste('<b>ID:</b>', id,
-                                                    '<br><b>Group:</b>', group_id,
-                                                    '<br><b>Component 1 Value:</b>', round(.fitted1, digits = 2),
-                                                    '<br><b>Component 2 Value:</b>', round(.fitted2, digits = 2))))
+          ggplot2::ggplot(ggplot2::aes(x = .fitted1, y = .fitted2))
         
       } else{
         
         p <- fits %>%
-          ggplot2::ggplot(ggplot2::aes(x = .fitted1, y = .fitted2,
-                                       text = paste('<b>ID:</b>', id,
-                                                    '<br><b>Group:</b>', group_id,
-                                                    '<br><b>Component 1 Value:</b>', round(.fitted1, digits = 2),
-                                                    '<br><b>Component 2 Value:</b>', round(.fitted2, digits = 2))))
+          ggplot2::ggplot(ggplot2::aes(x = .fitted1, y = .fitted2))
       }
       
       # Draw plot
@@ -261,25 +252,45 @@ plot_low_dimension <- function(data, is_normalised = FALSE, id_var = "id", group
           ggplot2::guides(fill = FALSE) +
           ggplot2::scale_fill_brewer(palette = "Dark2")
         
+      } else{
+        
       }
 
       if(nrow(fits) > 200){
         if(highlight == "Yes"){
           p <- p +
-            ggplot2::geom_point(size = 1.5, ggplot2::aes(colour = group_id), alpha = 0.3) +
-            ggplot2:::geom_point(data = idfilt, size = 4, ggplot2::aes(colour = group_id))
+            ggplot2::geom_point(size = 1.5, ggplot2::aes(colour = group_id, text = paste('<b>ID:</b>', id,
+                                                                            '<br><b>Group:</b>', group_id,
+                                                                            '<br><b>Component 1 Value:</b>', round(.fitted1, digits = 2),
+                                                                            '<br><b>Component 2 Value:</b>', round(.fitted2, digits = 2))), alpha = 0.3) +
+            ggplot2:::geom_point(data = idfilt, size = 4, ggplot2::aes(colour = group_id, text = paste('<b>ID:</b>', id,
+                                                                                          '<br><b>Group:</b>', group_id,
+                                                                                          '<br><b>Component 1 Value:</b>', round(.fitted1, digits = 2),
+                                                                                          '<br><b>Component 2 Value:</b>', round(.fitted2, digits = 2))))
         } else{
           p <- p +
-            ggplot2::geom_point(size = 1.5, ggplot2::aes(colour = group_id))
+            ggplot2::geom_point(size = 1.5, ggplot2::aes(colour = group_id, text = paste('<b>ID:</b>', id,
+                                                                            '<br><b>Group:</b>', group_id,
+                                                                            '<br><b>Component 1 Value:</b>', round(.fitted1, digits = 2),
+                                                                            '<br><b>Component 2 Value:</b>', round(.fitted2, digits = 2))))
         }
       } else{
         if(highlight == "Yes"){
           p <- p +
-            ggplot2::geom_point(size = 2.25, ggplot2::aes(colour = group_id), alpha = 0.3) +
-            ggplot2:::geom_point(data = idfilt, size = 4, ggplot2::aes(colour = group_id))
+            ggplot2::geom_point(size = 2.25, ggplot2::aes(colour = group_id, text = paste('<b>ID:</b>', id,
+                                                                             '<br><b>Group:</b>', group_id,
+                                                                             '<br><b>Component 1 Value:</b>', round(.fitted1, digits = 2),
+                                                                             '<br><b>Component 2 Value:</b>', round(.fitted2, digits = 2))), alpha = 0.3) +
+            ggplot2:::geom_point(data = idfilt, size = 4, ggplot2::aes(colour = group_id, text = paste('<b>ID:</b>', id,
+                                                                                          '<br><b>Group:</b>', group_id,
+                                                                                          '<br><b>Component 1 Value:</b>', round(.fitted1, digits = 2),
+                                                                                          '<br><b>Component 2 Value:</b>', round(.fitted2, digits = 2))))
         } else{
           p <- p +
-            ggplot2::geom_point(size = 2.25, ggplot2::aes(colour = group_id))
+            ggplot2::geom_point(size = 2.25, ggplot2::aes(colour = group_id, text = paste('<b>ID:</b>', id,
+                                                                             '<br><b>Group:</b>', group_id,
+                                                                             '<br><b>Component 1 Value:</b>', round(.fitted1, digits = 2),
+                                                                             '<br><b>Component 2 Value:</b>', round(.fitted2, digits = 2))))
         }
       }
       

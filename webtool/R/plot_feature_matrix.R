@@ -174,8 +174,7 @@ plot_feature_matrix <- function(data, is_normalised = FALSE, id_var = "id",
   }
 
   p <- p +
-    ggplot2::labs(title = "Data matrix",
-                  x = "Feature",
+    ggplot2::labs(x = "Feature",
                   y = "Time series") +
     ggplot2::theme_bw() + 
     ggplot2::theme(axis.text.y = ggplot2::element_blank(),
