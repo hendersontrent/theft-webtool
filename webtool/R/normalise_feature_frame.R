@@ -45,26 +45,30 @@ mm_function <- function(data){
 #' Scale each feature vector into a user-specified range for visualisation and modelling
 #' @import dplyr
 #' @param data a dataframe with at least 2 columns: names variable (feature names) and value variable
-#' @param names_var a string denoting the name of the variable/column that holds the feature names
-#' @param values_var a string denoting the name of the variable/column that holds the numerical feature values
-#' @param method a rescaling/normalising method to apply. Defaults to 'RobustSigmoid'
+#' @param names_var a string denoting the name of the variable/column that holds the feature names. Defaults to \code{"names"}
+#' @param values_var a string denoting the name of the variable/column that holds the numerical feature values. Defaults to \code{"values"}
+#' @param method a rescaling/normalising method to apply. Defaults to \code{"RobustSigmoid"}
 #' @return a dataframe with the value column rescaled into the specified range
 #' @author Trent Henderson
 #' @export
 #' @examples
 #' \dontrun{
-#' library(dplyr)
-#' library(tsibbledata)
-#' d <- tsibbledata::aus_retail %>%
-#'   filter(State == "New South Wales")
-#' outs <- calculate_features(data = d, id_var = "Industry", time_var = "Month", 
-#'   values_var = "Turnover", feature_set = "all", tsfresh_cleanup = FALSE)
-#' outsNormed <- normalise_feature_frame(outs, names_var = "names", 
-#'   values_var = "values", method = "RobustSigmoid")
-#'}
+#' featMat <- calculate_features(data = simData, 
+#'   id_var = "id", 
+#'   time_var = "timepoint", 
+#'   values_var = "values", 
+#'   group_var = "process", 
+#'   feature_set = "catch22")
+#'   
+#' normed <- normalise_feature_frame(featMat, 
+#'   names_var = "names", 
+#'   values_var = "values", 
+#'   method = "RobustSigmoid")
+#' }
 #'
 
-normalise_feature_frame <- function(data, names_var = NULL, values_var = NULL, method = c("z-score", "Sigmoid", "RobustSigmoid", "MinMax")){
+normalise_feature_frame <- function(data, names_var = "names", values_var = "values", 
+                                    method = c("z-score", "Sigmoid", "RobustSigmoid", "MinMax")){
   
   # Make RobustSigmoid the default
   
@@ -84,11 +88,11 @@ normalise_feature_frame <- function(data, names_var = NULL, values_var = NULL, m
   '%ni%' <- Negate('%in%')
   
   if(method %ni% the_methods){
-    stop("method should be a single selection of 'z-score', 'Sigmoid', 'RobustSigmoid', 'MinMax' or 'MeanSubtract'")
+    stop("method should be a single selection of 'z-score', 'Sigmoid', 'RobustSigmoid' or 'MinMax'")
   }
   
   if(length(method) > 1){
-    stop("method should be a single selection of 'z-score', 'Sigmoid', 'RobustSigmoid', 'MinMax' or 'MeanSubtract'")
+    stop("method should be a single selection of 'z-score', 'Sigmoid', 'RobustSigmoid' or 'MinMax'")
   }
   
   # Variables
@@ -127,25 +131,30 @@ normalise_feature_frame <- function(data, names_var = NULL, values_var = NULL, m
 #' Scale each feature vector into a user-specified range for visualisation and modelling
 #' @import dplyr
 #' @param data a dataframe with at least 2 columns: names variable (feature names) and value variable
-#' @param names_var a string denoting the name of the variable/column that holds the feature names
-#' @param values_var a string denoting the name of the variable/column that holds the numerical feature values
-#' @param method a rescaling/normalising method to apply. Defaults to 'RobustSigmoid'
+#' @param names_var a string denoting the name of the variable/column that holds the feature names. Defaults to \code{"names"}
+#' @param values_var a string denoting the name of the variable/column that holds the numerical feature values. Defaults to \code{"values"}
+#' @param method a rescaling/normalising method to apply. Defaults to \code{"RobustSigmoid"}
 #' @return a dataframe with the value column rescaled into the specified range
 #' @author Trent Henderson
 #' @export
 #' @examples
 #' \dontrun{
-#' library(dplyr)
-#' library(tsibbledata)
-#' d <- tsibbledata::aus_retail %>%
-#'   filter(State == "New South Wales")
-#' outs <- calculate_features(data = d, id_var = "Industry", time_var = "Month", 
-#'   values_var = "Turnover", feature_set = "all", tsfresh_cleanup = FALSE)
-#' outsNormed <- normalise_feature_frame(outs, names_var = "names", 
-#'   values_var = "values", method = "RobustSigmoid")
-#'}
+#' featMat <- calculate_features(data = simData, 
+#'   id_var = "id", 
+#'   time_var = "timepoint", 
+#'   values_var = "values", 
+#'   group_var = "process", 
+#'   feature_set = "catch22")
+#'   
+#' normed <- normalize_feature_frame(featMat, 
+#'   names_var = "names", 
+#'   values_var = "values", 
+#'   method = "RobustSigmoid")
+#' }
+#'
 
-normalize_feature_frame <- function(data, names_var = NULL, values_var = NULL, method = c("z-score", "Sigmoid", "RobustSigmoid", "MinMax")){
+normalize_feature_frame <- function(data, names_var = "names", values_var = "values", 
+                                    method = c("z-score", "Sigmoid", "RobustSigmoid", "MinMax")){
   
   # Make RobustSigmoid the default
   
@@ -165,11 +174,11 @@ normalize_feature_frame <- function(data, names_var = NULL, values_var = NULL, m
   '%ni%' <- Negate('%in%')
   
   if(method %ni% the_methods){
-    stop("method should be a single selection of 'z-score', 'Sigmoid', 'RobustSigmoid', 'MinMax' or 'MeanSubtract'")
+    stop("method should be a single selection of 'z-score', 'Sigmoid', 'RobustSigmoid' or 'MinMax'")
   }
   
   if(length(method) > 1){
-    stop("method should be a single selection of 'z-score', 'Sigmoid', 'RobustSigmoid', 'MinMax' or 'MeanSubtract'")
+    stop("method should be a single selection of 'z-score', 'Sigmoid', 'RobustSigmoid' or 'MinMax'")
   }
   
   # Variables

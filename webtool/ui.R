@@ -38,8 +38,8 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                             
                                             # Feature set selection
                                             
-                                            radioButtons("feature_set", "Select a feature set to use", 
-                                                                  choices = featuresets, selected = featuresets[1], inline = TRUE),
+                                            checkboxGroupInput("feature_set", "Select a feature set (or multiple) to use. Note that tsfeatures and feasts will take considerably longer than catch22 to compute.", 
+                                                               choices = featuresets, selected = featuresets[1], inline = TRUE),
                                             
                                             # Data uploads
                                             
@@ -126,17 +126,20 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                    #------------------ Low dim page --------------
                    
                    tabPanel(navtab1,
-                            fluidRow(h1("Low Dimension Visualisation")),
+                            fluidRow(h1("Low Dimensional Projection")),
                             sidebarLayout(
                               sidebarPanel(
                                 h2("Page Information"),
-                                p("This page visualises the time series features in a low-dimensional representation."),
+                                p("This page projects the extracted feature matrix into a low dimensional projection."),
                                 h3("Plotting Controls"),
                                 selectInput("inputScaler", "Select a rescaling function to apply prior to performing dimension reduction",
                                             choices = all_scalers, selected = all_scalers[3], multiple = FALSE),
                                 br(),
                                 radioButtons("low_dimSelect", "Select a low dimension method to use", 
                                              choices = lowdims, selected = lowdims[1], inline = TRUE),
+                                br(),
+                                radioButtons("covarianceSlider", "If using PCA and you entered a grouping variable, do you want to show covariance ellipses?",
+                                            choices = binaries, selected = binaries[2], inline = TRUE),
                                 br(),
                                 sliderInput("perplexitySlider", "If using t-SNE, select a perplexity hyperparameter value",
                                             min = 2, max = 100, value = 30),
@@ -174,7 +177,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                             sidebarLayout(
                               sidebarPanel(
                                 h2("Page Information"),
-                                p("This page visualises the quality of the calculated feature matrix by computing amounts of each data type."),
+                                p("This page visualises the quality of the calculated feature matrix by computing proportions of data types."),
                               ),
                               mainPanel(fluidRow(
                                 column(11,
@@ -189,36 +192,38 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                    #------------------ Matrix page ---------------
                    
                    tabPanel(navtab3,
-                            fluidRow(h1("Additional Visualisations")),
+                            fluidRow(h1("Data Matrix Visualisations")),
                             sidebarLayout(
                               sidebarPanel(
                                 h2("Page Information"),
-                                p("This page visualises the time series feature matrix as an array of different data visualisations. All data is scaled and hierarchically-clustered prior to heatmap plotting."),
+                                p("This page visualises various data matrices."),
                                 br(),
-                                selectInput("inputScaler2", "Select a rescaling function to apply prior to producing matrix visualisations.",
-                                            choices = all_scalers, selected = all_scalers[3], multiple = FALSE)
+                                selectInput("inputScaler2", "Select a normalisation function to apply",
+                                            choices = all_scalers, selected = all_scalers[3], multiple = FALSE),
+                                br(),
+                                selectInput("corMethod", "Select a correlation method to apply",
+                                            choices = cor_methods, selected = cor_methods[1], multiple = FALSE)
                               ),
                               mainPanel(
                                 tabsetPanel(id = "matrix_tabs",
-                                            tabPanel("Discriminant Visualisations",
+                                            tabPanel("Time Series x Feature Matrix",
                                                      fluidRow(
                                 column(11,
-                                  h3("Top Discriminating Features"),
-                                  shinycssloaders::withSpinner(plotlyOutput("discrim_plot", height = "1250px"))
+                                  shinycssloaders::withSpinner(plotlyOutput("id_by_feat_plot", height = "750px"))
                          )
                         )
                        ),
-                       tabPanel("Matrix Visualisations",
+                       tabPanel("Feature x Feature Matrix",
                                 fluidRow(
                                   column(11,
-                                         h3("Data Matrix"),
-                                         shinycssloaders::withSpinner(plotlyOutput("id_by_feat_plot", height = "750px"))
+                                         shinycssloaders::withSpinner(plotlyOutput("feat_by_feat_plot", height = "750px"))
                                   )
+                                 )
                                 ),
+                       tabPanel("Time Series x Time Series Matrix",
                                 fluidRow(
                                   column(11,
-                                         h3("Pairwise Correlation Matrix"),
-                                         shinycssloaders::withSpinner(plotlyOutput("feat_mat_plot", height = "750px"))
+                                         shinycssloaders::withSpinner(plotlyOutput("id_by_id_plot", height = "750px"))
                          )
                         )
                        )
@@ -230,8 +235,77 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                    #------------------ Classifier page -----------
                    
                    tabPanel(navtab4,
-                            fluidRow(h1("Classification Performance")),
-                            fluidRow(p("Automatic classification functionality coming soon."))),
+                            fluidRow(h1("Automated Time-Series Classification")),
+                            sidebarLayout(
+                              sidebarPanel(
+                                h2("Page Information"),
+                                p("This page automates time-series classification using univariate or multivariate features as inputs to algorithms."),
+                                h3("General Controls"),
+                                selectInput("classifierSelect", "Select a classification algorithm",
+                                            choices = classifiers, selected = classifiers[51], multiple = FALSE),
+                                br(),
+                                radioButtons("empiricalnullSelect", "Do you want to use an empirical null procedure to estimate p-values?", 
+                                             choices = binaries, selected = binaries[1], inline = TRUE),
+                                br(),
+                                sliderInput("kfoldSlider", "If using empirical null, how many random class label shuffles do you want to use?",
+                                            min = 1, max = 200, value = 50),
+                                br(),
+                                radioButtons("kfoldSelect", "Do you want to use k-fold cross-validation?", 
+                                             choices = binaries, selected = binaries[1], inline = TRUE),
+                                br(),
+                                sliderInput("kfoldSlider", "If using k-fold cross-validation, how many folds do you want to use?",
+                                            min = 1, max = 30, value = 10),
+                                br(),
+                                sliderInput("splitpropSlider", "What proportion of your data do you want in the train set?",
+                                            min = 0.1, max = 0.9, value = 0.8, step = 0.05),
+                                br(),
+                                radioButtons("balancedaccuracySelect", "Do you want to use balanced classification accuracy instead of overall classification accuracy?", 
+                                             choices = binaries, selected = binaries[2], inline = TRUE),
+                                hr(),
+                                h3("Multivariate Algorithm Controls"),
+                                radioButtons("bysetSelect", "If you selected more than one feature set, do you want to analyse each feature set independently?", 
+                                             choices = binaries, selected = binaries[2], inline = TRUE),
+                                hr(),
+                                h3("Univariate Algorithm Controls"),
+                                radioButtons("normaliseviolinSelect", "Do you want to normalise y-axis for violin plots?", 
+                                             choices = binaries, selected = binaries[1], inline = TRUE),
+                                br(),
+                                selectInput("inputScalerUnivariate", "Select a normalisation method to apply prior to computing correlations between top features",
+                                            choices = all_scalers, selected = all_scalers[3], multiple = FALSE),
+                                br(),
+                                selectInput("corMethodUnivariate", "Select a correlation method to apply",
+                                            choices = cor_methods, selected = cor_methods[1], multiple = FALSE),
+                                br(),
+                                radioButtons("poolednullSelect", "If using empirical null, do you want to used a pooled empirical null (i.e., null distribution is null samples of all features)?", 
+                                             choices = binaries, selected = binaries[2], inline = TRUE),
+                              ),
+                              mainPanel(
+                                tabsetPanel(id = "classifier_tabs",
+                                            tabPanel("Multivariate Approach",
+                                                     fluidRow(p("Coming soon!")),
+                                                     fluidRow(
+                                                       column(11,
+                                                              shinycssloaders::withSpinner(plotlyOutput("by_set_plot", height = "750px"))
+                                                       )
+                                                     )
+                                            ),
+                                            tabPanel("Univariate Approach",
+                                                     fluidRow(p("Coming soon!")),
+                                                     fluidRow(
+                                                       column(11,
+                                                              shinycssloaders::withSpinner(plotlyOutput("top_feature_cor_plot", height = "750px"))
+                                                       )
+                                                     ),
+                                                     fluidRow(
+                                                       column(11,
+                                                              shinycssloaders::withSpinner(plotlyOutput("top_feature_violin_plot", height = "750px"))
+                                                       )
+                                                     )
+                              )
+                             )
+                            )
+                           )
+                          ),
                    
                    #------------------ About page ----------------
                    

@@ -3,22 +3,23 @@
 
 ### What is this application?
 
-This application automatically takes an input dataset containing multiple time series, parses it, calculates feature matrices, and produces all analysis for interactive visualisation all within your web browser. If your data contains a binary class label vector, the application can also produce automated classification using cross-validated machine learning algorithms with the calculated feature matrices as inputs (*functionality coming soon*).
+This application automatically takes an input dataset containing multiple time series, processes it, calculates a set of time-series features, and produces a range of interactive visualisations for the extracted features all within your web browser. If your data contains a binary class label vector, this application also produces automated classification using cross-validated machine learning algorithms with the calculated feature matrices as inputs.
 
-The backbone of the application is the `R` package [`theft`](https://github.com/hendersontrent/theft) - Tools for Handling Extraction of Features from Time-series. This application extends the core functions of `theft` into a user-driven setting through the conversion of static graphics and computations included in the package to interactive and dynamic content appropriate for a web browser.
+The backbone of the application is the `R` package [`theft`](https://github.com/hendersontrent/theft) - Tools for Handling Extraction of Features from Time-series. This application enables researchers unfamiliar with `R` or code to do feature-based time-series analysis in their web browser. Note that not all of the power of `theft` is currently in this application --- the three Python feature sets (`tsfresh`, `TSFEL`, and `Kats`) which `theft` accesses are currently not supported yet.
 
 ### How do I use it?
 
-The application only requires a time-series dataset to be uploaded by the user to get started. Navigate to the homepage and upload your time series dataset. More input formats are continuously being added. Please check back soon for more options if you data format is not currently accepted, otherwise, please convert to an accepted format in the meantime.
+The application only requires a time-series dataset to be uploaded to get started. Navigate to the homepage and upload your time series dataset. More input formats are continuously being added. Please check back soon for more options if you data format is not currently accepted, otherwise, please convert to an accepted format in the meantime.
 
 ### Who made it?
 
-This application was developed by [Trent Henderson](https://twitter.com/trentlikesstats) with conceptual guidance from [Ben Fulcher](http://www.benfulcher.com) - both researchers in the [Dynamics and Neural Systems Group](https://dynamicsandneuralsystems.github.io) in the School of Physics at The University of Sydney. Please send any questions to Trent via [email](then6675@sydney.edu.au) or Ben via [email](ben.fulcher@sydney.edu.au). If you identify an issue with the application itself, please log an issue at the [GitHub repository](https://github.com/hendersontrent/theft-webtool/issues).
+This application was developed by [Trent Henderson](https://twitter.com/trentlikesstats) -- a PhD student in the [Dynamics and Neural Systems Group](https://dynamicsandneuralsystems.github.io) in the School of Physics at The University of Sydney. Please send any questions to Trent via [email](then6675@sydney.edu.au). If you identify an issue with the application itself, please log an issue at the [GitHub repository](https://github.com/hendersontrent/theft-webtool/issues).
 
 ### Where can I read more?
 
-There are numerous resources associated with the computations, methodology, and philosophy underpinning the functionality of this application. Some of these are linked below.
+There are numerous resources associated with this application. Some of these are linked below.
 
+* T. Henderson and B. D. Fulcher. [An Empirical Evaluation of Time-Series Feature Sets](https://ieeexplore.ieee.org/document/9679937). 2021 International Conference on Data Mining Workshops (ICDMW), (2022).
 * [`hctsa`](https://github.com/benfulcher/hctsa) software toolbox for MATLAB
 * B.D. Fulcher and N.S. Jones. [hctsa: A computational framework for automated time-series phenotyping using massive feature extraction](https://www.cell.com/cell-systems/fulltext/S2405-4712(17)30438-6). Cell Systems 5, 527 (2017).
 * B.D. Fulcher, M.A. Little, N.S. Jones. [Highly comparative time-series analysis: the empirical structure of time series and their methods](https://royalsocietypublishing.org/doi/full/10.1098/rsif.2013.0048). J. Roy. Soc. Interface 10, 83 (2013).

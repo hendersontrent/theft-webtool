@@ -8,6 +8,7 @@
 #-------------------------------------
 
 library(shiny)
+library(data.table)
 library(dplyr)
 library(magrittr)
 library(tidyr)
@@ -29,7 +30,11 @@ library(feasts)
 library(tsfeatures)
 library(Rtsne)
 library(R.matlab)
-library(data.table)
+library(caret)
+library(purrr)
+library(RColorBrewer)
+library(janitor)
+library(markdown)
 
 # Load in any HTML imports
 
@@ -38,6 +43,13 @@ for(f in import_files){
   object_name <- gsub("imports/", "", f)
   object_name <- gsub("\\.html", "", object_name)
   assign(object_name, readLines(f, warn = FALSE))
+}
+
+# Load in caret model list
+
+data_files <- list.files("data", full.names = TRUE, pattern = "\\.Rda")
+for(d in data_files){
+  load(d)
 }
 
 # Load in any R functions
@@ -50,10 +62,10 @@ for(f in r_files){
 # Define tab names
 
 navtab0 <- "HOME"
-navtab1 <- "LOW DIMENSION VISUALISATION"
+navtab1 <- "LOW DIMENSIONAL PROJECTION"
 navtab2 <- "FEATURE CALCULATION QUALITY"
-navtab3 <- "ADDITIONAL VISUALISATIONS"
-navtab4 <- "CLASSIFICATION PERFORMANCE"
+navtab3 <- "DATA MATRIX VISUALISATION"
+navtab4 <- "TIME-SERIES CLASSIFICATION"
 navtab5 <- "ABOUT"
 
 # Turn off scientific notation
@@ -66,3 +78,5 @@ all_scalers <- c("z-score", "Sigmoid", "RobustSigmoid", "MinMax")
 featuresets <- c("catch22", "feasts", "tsfeatures")
 binaries <- c("No", "Yes")
 lowdims <- c("PCA", "t-SNE")
+cor_methods <- c("pearson", "spearman")
+classifiers <- unique(caretModels$model)
