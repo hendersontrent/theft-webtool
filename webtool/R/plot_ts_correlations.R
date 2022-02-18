@@ -10,7 +10,7 @@
 #' @importFrom stats cor
 #' @importFrom plotly ggplotly
 #' @importFrom plotly config
-#' @param data a dataframewith at least 2 columns for \code{"id"} and \code{"values"} variables
+#' @param data a dataframe with at least 2 columns for \code{"id"} and \code{"values"} variables
 #' @param is_normalised a Boolean as to whether the input feature values have already been scaled. Defaults to \code{FALSE}
 #' @param id_var a string specifying the ID variable to compute pairwise correlations between. Defaults to \code{"id"}
 #' @param time_var a string specifying the time index variable. Defaults to \code{NULL}

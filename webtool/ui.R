@@ -60,7 +60,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                                                           value = "Enter the ID variable name...")),
                                                          column(1),
                                                          column(2,
-                                                                textInput("input_group_var", "Enter the exact name of the grouping variable if one exists",
+                                                                textInput("input_group_var", "Enter the exact name of the grouping variable if one exists. If your data has no group variable, leave this cell as-is -- do not delete the text.",
                                                                           value = "Enter the group variable name...")),
                                                          column(1),
                                                          column(2,
@@ -118,7 +118,10 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                               column(11,
                                      h3("Run Calculations"),
                                      p("After making selections and uploading data using the controls above, click the button below to run calculations."),
-                                     actionButton("run", "Run Calculations")
+                                     actionButton("run", "Run Calculations"),
+                                     br(),
+                                     br(),
+                                     p("After pressing the 'Run Calculations button', navigate to one of the other pages using the header at the top of the page to view results.")
                              )
                             )
                            ),
