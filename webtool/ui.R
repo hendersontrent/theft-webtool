@@ -47,6 +47,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                               tabPanel("Single Long Datafile",
                                                        br(),
                                                        p("Please ensure your 'timepoint' variable is an integer or numeric. If it is a date or other format, please convert prior to uploading."),
+                                                       p("Please also ensure that your variable names have no spaces in them."),
                                                        fluidRow(
                                                          column(2,
                                                            fileInput("userUpload", HTML("Upload your time series file"),
