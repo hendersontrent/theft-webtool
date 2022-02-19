@@ -142,9 +142,6 @@ plot_low_dimension <- function(data, is_normalised = FALSE, id_var = "id", group
   # Produce matrix and z-score for PCA stability
   
   dat_filtered <- normed %>%
-    dplyr::group_by(names) %>%
-    dplyr::mutate(values = normalise_feature_vector(values, method = "z-score")) %>%
-    dplyr::ungroup() %>%
     tidyr::pivot_wider(id_cols = id, names_from = names, values_from = values) %>%
     tibble::column_to_rownames(var = "id") %>%
     tidyr::drop_na()
@@ -155,8 +152,24 @@ plot_low_dimension <- function(data, is_normalised = FALSE, id_var = "id", group
     
     set.seed(123)
     
-    fits <- dat_filtered %>%
-      stats::prcomp(scale = FALSE)
+    fits <- try(dat_filtered %>%
+      stats::prcomp(scale = FALSE))
+    
+    if("try-error" %in% class(fits)){
+      dat_filtered <- data_id %>%
+        dplyr::select(c(id, names, values)) %>%
+        tidyr::drop_na() %>%
+        dplyr::group_by(names) %>%
+        dplyr::mutate(values = normalise_feature_vector(values, method = "z-score")) %>%
+        dplyr::ungroup() %>%
+        tidyr::drop_na() %>%
+        tidyr::pivot_wider(id_cols = id, names_from = names, values_from = values) %>%
+        tibble::column_to_rownames(var = "id") %>%
+        tidyr::drop_na()
+      
+      fits <- dat_filtered %>%
+        stats::prcomp(scale = FALSE)
+    }
     
     # Retrieve eigenvalues and tidy up variance explained for plotting
     
@@ -180,8 +193,24 @@ plot_low_dimension <- function(data, is_normalised = FALSE, id_var = "id", group
     
     set.seed(123)
     
-    tsneOut <- Rtsne::Rtsne(as.matrix(dat_filtered), perplexity = perplexity, max_iter = 5000, dims = 2,
-                            check_duplicates = FALSE)
+    tsneOut <- try(Rtsne::Rtsne(as.matrix(dat_filtered), perplexity = perplexity, max_iter = 5000, dims = 2,
+                            check_duplicates = FALSE))
+    
+    if("try-error" %in% class(tsneOut)){
+      dat_filtered <- data_id %>%
+        dplyr::select(c(id, names, values)) %>%
+        tidyr::drop_na() %>%
+        dplyr::group_by(names) %>%
+        dplyr::mutate(values = normalise_feature_vector(values, method = "z-score")) %>%
+        dplyr::ungroup() %>%
+        tidyr::drop_na() %>%
+        tidyr::pivot_wider(id_cols = id, names_from = names, values_from = values) %>%
+        tibble::column_to_rownames(var = "id") %>%
+        tidyr::drop_na()
+      
+      tsneOut <- Rtsne::Rtsne(as.matrix(dat_filtered), perplexity = perplexity, max_iter = 5000, dims = 2,
+                              check_duplicates = FALSE)
+    }
     
     # Retrieve 2-dimensional embedding and add in unique IDs
     
