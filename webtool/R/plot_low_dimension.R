@@ -372,8 +372,8 @@ plot_low_dimension <- function(data, is_normalised = FALSE, id_var = "id", group
           dplyr::mutate(group_id = as.factor(group_id)) %>%
           ggplot2::ggplot(ggplot2::aes(x = .fitted1, y = .fitted2,
                                        text = paste('<b>ID:</b>', id,
-                                                    '<br><b>Component 1 Value:</b>', round(.fitted1, digits = 2),
-                                                    '<br><b>Component 2 Value:</b>', round(.fitted2, digits = 2))))
+                                                    '<br><b>Component 1 Value: </b>', round(.fitted1, digits = 2),
+                                                    '<br><b>Component 2 Value: </b>', round(.fitted2, digits = 2))))
         
       } else{
         
@@ -381,8 +381,8 @@ plot_low_dimension <- function(data, is_normalised = FALSE, id_var = "id", group
           dplyr::mutate(group_id = as.factor(group_id)) %>%
           ggplot2::ggplot(ggplot2::aes(x = .fitted1, y = .fitted2,
                                        text = paste('<b>ID:</b>', id,
-                                                    '<br><b>Component 1 Value:</b>', round(.fitted1, digits = 2),
-                                                    '<br><b>Component 2 Value:</b>', round(.fitted2, digits = 2))))
+                                                    '<br><b>Component 1 Value: </b>', round(.fitted1, digits = 2),
+                                                    '<br><b>Component 2 Value: </b>', round(.fitted2, digits = 2))))
       }
       
       if(nrow(fits) > 200){

@@ -122,7 +122,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                      actionButton("run", "Run Calculations"),
                                      br(),
                                      br(),
-                                     p("After pressing the 'Run Calculations button', navigate to one of the other pages using the header at the top of the page to view results.")
+                                     p("After pressing the 'Run Calculations button', navigate to one of the other pages using the header at the top of the page to view results. If a message stating 'Please upload a dataset to get started.' is displayed on these other tabs, please re-click the 'Run Calculations' button.")
                              )
                             )
                            ),
@@ -244,7 +244,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                             sidebarLayout(
                               sidebarPanel(
                                 h2("Page Information"),
-                                p("This page automates time-series classification using univariate or multivariate features as inputs to algorithms."),
+                                p("This page automates time-series classification using univariate or multivariate features as inputs to algorithms. Note that these algorithms may take a long time to run."),
                                 h3("General Controls"),
                                 selectInput("classifierSelect", "Select a classification algorithm",
                                             choices = classifiers, selected = classifiers[51], multiple = FALSE),
@@ -252,7 +252,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                 radioButtons("empiricalnullSelect", "Do you want to use an empirical null procedure to estimate p-values?", 
                                              choices = binaries, selected = binaries[1], inline = TRUE),
                                 br(),
-                                sliderInput("kfoldSlider", "If using empirical null, how many random class label shuffles do you want to use?",
+                                sliderInput("shuffleSlider", "If using empirical null, how many random class label shuffles do you want to use?",
                                             min = 1, max = 200, value = 50),
                                 br(),
                                 radioButtons("kfoldSelect", "Do you want to use k-fold cross-validation?", 
@@ -270,6 +270,9 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                 h3("Multivariate Algorithm Controls"),
                                 radioButtons("bysetSelect", "If you selected more than one feature set, do you want to analyse each feature set independently?", 
                                              choices = binaries, selected = binaries[2], inline = TRUE),
+                                br(),
+                                p("After making selections and uploading data using the controls above, click the button below to run calculations."),
+                                actionButton("runMultivariate", "Run Multivariate Models"),
                                 hr(),
                                 h3("Univariate Algorithm Controls"),
                                 selectInput("inputScalerUnivariate", "Select a normalisation method to apply prior to computing correlations between top features",
@@ -280,14 +283,16 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                 br(),
                                 radioButtons("poolednullSelect", "If using empirical null, do you want to used a pooled empirical null (i.e., null distribution is null samples of all features)?", 
                                              choices = binaries, selected = binaries[2], inline = TRUE),
+                                br(),
+                                p("After making selections and uploading data using the controls above, click the button below to run calculations."),
+                                actionButton("runUnivariate", "Run Univariate Models")
                               ),
                               mainPanel(
                                 tabsetPanel(id = "classifier_tabs",
                                             tabPanel("Multivariate Approach",
-                                                     fluidRow(p("Coming soon!")),
                                                      fluidRow(
                                                        column(11,
-                                                              shinycssloaders::withSpinner(plotlyOutput("by_set_plot", height = "750px"))
+                                                              shinycssloaders::withSpinner(plotlyOutput("multivariatePlot", height = "750px"))
                                                        )
                                                      )
                                             ),

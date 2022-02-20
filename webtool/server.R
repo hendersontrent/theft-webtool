@@ -438,13 +438,7 @@ shinyServer <- function(input, output, session) {
   # Multivariate classifier
   #------------------------
   
-  # Fit model
-  
-  
-  
-  # Draw plot
-  
-  output$by_set_plot <- renderPlotly({
+  multivariateOutputs <- eventReactive(input$runMultivariate, {
     
     # Account for lack of data upload to avoid error message
     
@@ -453,6 +447,57 @@ shinyServer <- function(input, output, session) {
       )
     )
     
+    # Set up set specification
+    
+    if(input$bysetSelect == binaries[2]){
+      by_set <- TRUE
+    } else{
+      by_set <- FALSE
+    }
+    
+    if(input$balancedaccuracySelect == binaries[2]){
+      use_balanced_accuracy <- TRUE
+    } else{
+      use_balanced_accuracy <- FALSE
+    }
+    
+    if(input$kfoldSelect == binaries[2]){
+      use_k_fold <- TRUE
+    } else{
+      use_k_fold <- FALSE
+    }
+    
+    if(input$empiricalnullSelect == binaries[2]){
+      use_empirical_null <- TRUE
+    } else{
+      use_empirical_null <- FALSE
+    }
+    
+    # Fit model(s) and draw graphic
+    
+    multivariateOutputList <- fit_multivariate_classifier(featureMatrix(), id_var = "id", group_var = "group",
+                                                       by_set = by_set, test_method = input$classifierSelect,
+                                                       use_empirical_null = use_empirical_null, use_k_fold = use_k_fold,
+                                                       num_folds = input$kfoldSlider, split_prop = input$splitpropSlider, 
+                                                       num_shuffles = input$shuffleSlider, use_balanced_accuracy = use_balanced_accuracy)
+    
+    return(multivariateOutputList)
+  })
+  
+  # Get plot
+  
+  output$multivariatePlot <- renderPlotly({
+    
+    # Account for lack of data upload to avoid error message
+    
+    validate(
+      need(multivariateOutputs(), "Please upload a dataset and specify controls to get started."
+      )
+    )
+    
+    # Render plot
+    
+    multivariateOutputs()$myPlot
   })
   
   #----------------------
@@ -461,7 +506,16 @@ shinyServer <- function(input, output, session) {
   
   # Fit model
   
-  
+  univariateOutputs <- eventReactive(input$runUnivariate, {
+    
+    # Account for lack of data upload to avoid error message
+    
+    validate(
+      need(featureMatrix(), "Please upload a dataset and specify controls to get started."
+      )
+    )
+    
+  })
   
   # Draw top feature correlation plot
   
