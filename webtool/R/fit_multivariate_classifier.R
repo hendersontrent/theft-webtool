@@ -453,30 +453,28 @@ fit_multivariate_classifier <- function(data, id_var = "id", group_var = "group"
       
     # Draw plot
       
-    FeatureSetResultsPlot <- output %>%
+    myPlot <- output %>%
       dplyr::filter(category == "Main") %>%
       dplyr::inner_join(feat_nums, by = c("method" = "method")) %>%
       dplyr::mutate(method = paste0(method, " (", num_feats, ")")) %>%
       dplyr::mutate(statistic = statistic * 100) %>%
-      ggplot2::ggplot(ggplot2::aes(x = stats::reorder(method, -statistic))) +
+      ggplot2::ggplot(ggplot2::aes(x = stats::reorder(method, -statistic), text = paste('<b>Method: </b>', method,
+                                                                                      paste0('<br><b>Classification accuracy: </b>', round(statistic, digits = 2), "%")))) +
       ggplot2::geom_bar(ggplot2::aes(y = statistic, fill = method), stat = "identity")
     
     if(use_balanced_accuracy){
       
-      FeatureSetResultsPlot <- FeatureSetResultsPlot +
-        ggplot2::labs(title = "Balanced classification accuracy by feature set",
-                      y = "Balanced classification accuracy (%)")
+      myPlot <- myPlot +
+        ggplot2::labs(y = "Balanced classification accuracy (%)")
       
     } else{
       
-      FeatureSetResultsPlot <- FeatureSetResultsPlot +
-        ggplot2::labs(title = "Classification accuracy by feature set",
-                      y = "Classification accuracy (%)")
+      myPlot <- myPlot +
+        ggplot2::labs(y = "Classification accuracy (%)")
     }
     
-    FeatureSetResultsPlot <- FeatureSetResultsPlot +
-      ggplot2::labs(subtitle = "Number of features in each set used for analysis is indicated in parentheses",
-                    x = "Feature set",
+    myPlot <- myPlot +
+      ggplot2::labs(x = "Feature set",
                     fill = NULL) +
       ggplot2::theme_bw() +
       ggplot2::scale_y_continuous(limits = c(0, 100),
@@ -486,6 +484,12 @@ fit_multivariate_classifier <- function(data, id_var = "id", group_var = "group"
       ggplot2::theme(panel.grid.minor = ggplot2::element_blank(),
                      legend.position = "none",
                      axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
+    
+    #-------- Convert to interactive graphic --------
+    
+    myPlot <- ggplotly(myPlot, tooltip = c("text")) %>%
+      layout(legend = list(orientation = "h", x = 0, y = -0.2)) %>%
+      config(displayModeBar = FALSE)
       
     #---------- Compute p values ------
       
@@ -502,8 +506,8 @@ fit_multivariate_classifier <- function(data, id_var = "id", group_var = "group"
         dplyr::mutate(classifier_name = classifier_name,
                       statistic_name = statistic_name)
       
-      myList <- list(FeatureSetResultsPlot, TestStatistics, output)
-      names(myList) <- c("FeatureSetResultsPlot", "TestStatistics", "RawClassificationResults")
+      myList <- list(myPlot, TestStatistics, output)
+      names(myList) <- c("myPlot", "TestStatistics", "RawClassificationResults")
         
       } else{
         
@@ -512,10 +516,46 @@ fit_multivariate_classifier <- function(data, id_var = "id", group_var = "group"
                         statistic_name = statistic_name) %>%
           dplyr::select(-c(category))
         
-        myList <- list(FeatureSetResultsPlot, output)
-        names(myList) <- c("FeatureSetResultsPlot", "RawClassificationResults")
+        myList <- list(myPlot, output)
+        names(myList) <- c("myPlot", "RawClassificationResults")
     }
   } else{
+    
+    # Draw plot
+    
+    myPlot <- output %>%
+      dplyr::filter(category == "Main") %>%
+      dplyr::mutate(statistic = statistic * 100) %>%
+      dplyr::mutate(method = "All Features") %>%
+      ggplot2::ggplot(ggplot2::aes(x = method, text = paste(paste0('<br><b>Classification accuracy: </b>', round(statistic, digits = 2), "%")))) +
+      ggplot2::geom_bar(ggplot2::aes(y = statistic), stat = "identity", fill = "#1B9E77")
+    
+    if(use_balanced_accuracy){
+      
+      myPlot <- myPlot +
+        ggplot2::labs(y = "Balanced classification accuracy (%)")
+      
+    } else{
+      
+      myPlot <- myPlot +
+        ggplot2::labs(y = "Classification accuracy (%)")
+    }
+    
+    myPlot <- myPlot +
+      ggplot2::labs(x = NULL) +
+      ggplot2::theme_bw() +
+      ggplot2::scale_y_continuous(limits = c(0, 100),
+                                  breaks = seq(from = 0, to = 100, by = 20),
+                                  labels = function(x) paste0(x, "%")) +
+      ggplot2::theme(panel.grid.minor = ggplot2::element_blank(),
+                     legend.position = "none",
+                     axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
+      
+      #-------- Convert to interactive graphic --------
+      
+      myPlot <- ggplotly(myPlot, tooltip = c("text")) %>%
+        layout(legend = list(orientation = "h", x = 0, y = -0.2)) %>%
+        config(displayModeBar = FALSE)
       
     if(use_empirical_null){
       
@@ -527,8 +567,8 @@ fit_multivariate_classifier <- function(data, id_var = "id", group_var = "group"
         dplyr::mutate(classifier_name = classifier_name,
                       statistic_name = statistic_name)
       
-      myList <- list(TestStatistics, output)
-      names(myList) <- c("TestStatistics", "RawClassificationResults")
+      myList <- list(myPlot, TestStatistics, output)
+      names(myList) <- c("myPlot", "TestStatistics", "RawClassificationResults")
       
     } else{
       
@@ -537,8 +577,8 @@ fit_multivariate_classifier <- function(data, id_var = "id", group_var = "group"
                       statistic_name = statistic_name) %>%
         dplyr::select(-c(category))
       
-      myList <- list(output)
-      names(myList) <- c("RawClassificationResults") 
+      myList <- list(myPlot, output)
+      names(myList) <- c("myPlot", "RawClassificationResults") 
     }
   }
   return(myList)
