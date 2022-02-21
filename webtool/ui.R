@@ -275,8 +275,8 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                 actionButton("runMultivariate", "Run Multivariate Models"),
                                 hr(),
                                 h3("Univariate Algorithm Controls"),
-                                selectInput("inputScalerUnivariate", "Select a normalisation method to apply prior to computing correlations between top features",
-                                            choices = all_scalers, selected = all_scalers[3], multiple = FALSE),
+                                sliderInput("numFeaturesSlider", "How many top features do you want to extract? If the number of top features exceeds number of extracted features, the algorithm will automatically adjust.",
+                                            min = 2, max = 50, value = 40),
                                 br(),
                                 selectInput("corMethodUnivariate", "Select a correlation method to apply",
                                             choices = cor_methods, selected = cor_methods[1], multiple = FALSE),
@@ -297,15 +297,16 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                                      )
                                             ),
                                             tabPanel("Univariate Approach",
-                                                     fluidRow(p("Coming soon!")),
                                                      fluidRow(
+                                                       h3("Pairwise Correlations between Top Features"),
                                                        column(11,
-                                                              shinycssloaders::withSpinner(plotlyOutput("top_feature_cor_plot", height = "750px"))
+                                                              shinycssloaders::withSpinner(plotlyOutput("top_feature_cor_plot", height = "700px"))
                                                        )
                                                      ),
                                                      fluidRow(
+                                                       h3("Distribution of Values by Feature and Class"),
                                                        column(11,
-                                                              shinycssloaders::withSpinner(plotlyOutput("top_feature_violin_plot", height = "750px"))
+                                                              shinycssloaders::withSpinner(plotlyOutput("top_feature_violin_plot", height = "700px"))
                                                        )
                                                      )
                               )
