@@ -515,6 +515,42 @@ shinyServer <- function(input, output, session) {
       )
     )
     
+    # Set up set specification
+    
+    if(input$balancedaccuracySelect == binaries[2]){
+      use_balanced_accuracy <- TRUE
+    } else{
+      use_balanced_accuracy <- FALSE
+    }
+    
+    if(input$kfoldSelect == binaries[2]){
+      use_k_fold <- TRUE
+    } else{
+      use_k_fold <- FALSE
+    }
+    
+    if(input$empiricalnullSelect == binaries[2]){
+      use_empirical_null <- TRUE
+    } else{
+      use_empirical_null <- FALSE
+    }
+    
+    if(input$poolednullSelect == binaries[2]){
+      pool_empirical_null <- TRUE
+    } else{
+      pool_empirical_null <- FALSE
+    }
+    
+    # Fit model(s) and draw graphic
+    
+    univariateOutputList <- compute_top_features(featureMatrix(), id_var = "id", group_var = "group",
+                                                 num_features = input$numFeaturesSlider, normalise_violin_plots = FALSE, test_method = input$classifierSelect,
+                                                 method = "z-score", cor_method = input$corMethodUnivariate, use_empirical_null = use_empirical_null, 
+                                                 use_k_fold = use_k_fold, num_folds = input$kfoldSlider, split_prop = input$splitpropSlider, 
+                                                 num_shuffles = input$shuffleSlider, pool_empirical_null = pool_empirical_null,
+                                                 use_balanced_accuracy = use_balanced_accuracy)
+    
+    return(univariateOutputList)
   })
   
   # Draw top feature correlation plot
@@ -524,10 +560,13 @@ shinyServer <- function(input, output, session) {
     # Account for lack of data upload to avoid error message
     
     validate(
-      need(featureMatrix(), "Please upload a dataset to get started."
+      need(univariateOutputs(), "Please upload a dataset and specify controls to get started."
       )
     )
     
+    # Render plot
+    
+    univariateOutputs()$FeatureFeatureCorrelationPlot
   })
   
   # Draw top feature violin plot
@@ -537,10 +576,13 @@ shinyServer <- function(input, output, session) {
     # Account for lack of data upload to avoid error message
     
     validate(
-      need(featureMatrix(), "Please upload a dataset to get started."
+      need(univariateOutputs(), "Please upload a dataset and specify controls to get started."
       )
     )
     
+    # Render plot
+    
+    univariateOutputs()$ViolinPlots
   })
   
 }

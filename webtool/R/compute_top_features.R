@@ -31,17 +31,24 @@ draw_top_feature_plot <- function(data, method, cor_method, num_features){
   # Draw plot
   
   FeatureFeatureCorrelationPlot <- cluster_out %>%
-    ggplot2::ggplot(ggplot2::aes(x = Var1, y = Var2)) +
+    ggplot2::ggplot(ggplot2::aes(x = Var1, y = Var2,
+                                 text = paste('<b>Feature 1: </b>', Var1,
+                                              '<br><b>Feature 2: </b>', Var2,
+                                              '<br><b>Value: </b>', round(value, digits = 2)))) +
     ggplot2::geom_tile(ggplot2::aes(fill = value)) +
-    ggplot2::labs(title = paste0("Pairwise correlation matrix of top ", num_features, " features"),
-                  x = NULL,
+    ggplot2::labs(x = NULL,
                   y = NULL,
                   fill = "Correlation coefficient") +
     ggplot2::scale_fill_distiller(palette = "RdBu", limits = c(-1, 1)) +
     ggplot2::theme_bw() +
     ggplot2::theme(panel.grid = ggplot2::element_blank(),
-                   legend.position = "bottom",
                    axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
+  
+  #-------- Convert to interactive graphic --------
+  
+  FeatureFeatureCorrelationPlot <- ggplotly(FeatureFeatureCorrelationPlot, tooltip = c("text")) %>%
+    layout(legend = list(orientation = "h", x = 0, y = -0.2)) %>%
+    config(displayModeBar = FALSE)
   
   return(FeatureFeatureCorrelationPlot)
 }
@@ -90,10 +97,12 @@ plot_feature_discrimination <- function(data, id_var = "id", group_var = "group"
     dplyr::mutate(group = as.factor(group)) %>%
     ggplot2::ggplot(ggplot2::aes(x = group, y = values, colour = group)) +
     ggplot2::geom_violin() +
-    ggplot2::geom_point(size = 1, alpha = 0.9, position = ggplot2::position_jitter(w = 0.05)) +
-    ggplot2::labs(title = "Class discrimination for top performing features",
-                  subtitle = "Features are ordered by performance from left to right",
-                  x = "Class",
+    ggplot2::geom_point(size = 1, alpha = 0.9, position = ggplot2::position_jitter(w = 0.05),
+                        ggplot2::aes(text = paste('<b>ID: </b>', id,
+                                     '<br><b>Group: </b>', group,
+                                     '<br><b>Feature: </b>', names,
+                                     '<br><b>Value: </b>', round(values, digits = 2)))) +
+    ggplot2::labs(x = "Class",
                   y = "Value") +
     ggplot2::scale_colour_brewer(palette = "Dark2") +
     ggplot2::theme_bw() +
@@ -109,6 +118,12 @@ plot_feature_discrimination <- function(data, id_var = "id", group_var = "group"
     p <- p +
       ggplot2::facet_wrap(~names, ncol = 4, scales = "free_y")
   }
+  
+  #-------- Convert to interactive graphic --------
+  
+  p <- ggplotly(p, tooltip = c("text")) %>%
+    layout(legend = list(orientation = "h", x = 0, y = -0.2)) %>%
+    config(displayModeBar = FALSE)
   
   return(p)
 }
