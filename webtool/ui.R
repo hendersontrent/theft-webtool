@@ -249,23 +249,24 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                 selectInput("classifierSelect", "Select a classification algorithm",
                                             choices = classifiers, selected = classifiers[51], multiple = FALSE),
                                 br(),
-                                radioButtons("empiricalnullSelect", "Do you want to use an empirical null procedure to estimate p-values?", 
-                                             choices = binaries, selected = binaries[1], inline = TRUE),
-                                br(),
-                                sliderInput("shuffleSlider", "If using empirical null, how many random class label shuffles do you want to use?",
-                                            min = 1, max = 200, value = 50),
-                                br(),
                                 radioButtons("kfoldSelect", "Do you want to use k-fold cross-validation?", 
                                              choices = binaries, selected = binaries[1], inline = TRUE),
                                 br(),
                                 sliderInput("kfoldSlider", "If using k-fold cross-validation, how many folds do you want to use?",
                                             min = 1, max = 30, value = 10),
                                 br(),
-                                sliderInput("splitpropSlider", "What proportion of your data do you want in the train set?",
-                                            min = 0.1, max = 0.9, value = 0.8, step = 0.05),
+                                radioButtons("empiricalnullSelect", "Do you want to use an empirical null procedure to estimate p-values?", 
+                                             choices = binaries, selected = binaries[1], inline = TRUE),
                                 br(),
-                                radioButtons("balancedaccuracySelect", "Do you want to use balanced classification accuracy instead of overall classification accuracy?", 
-                                             choices = binaries, selected = binaries[2], inline = TRUE),
+                                sliderInput("permutationSlider", "If using empirical null, how many random class label permutations do you want to use?",
+                                            min = 1, max = 1000, value = 50),
+                                br(),
+                                radioButtons("nullmethodSelect", "If using empirical null, which permutation testing method would you like to use?", 
+                                             choices = null_testing_methods, selected = null_testing_methods[1], inline = TRUE),
+                                p("Note that 'model free shuffles' is considerably faster than 'null model fits'. For univariate applications, if using 'null model fits', consider lowering number of permutations for faster results in the web browser."),
+                                br(),
+                                radioButtons("pvaluemethodSelect", "If using empirical null, which p-value calculation method would you like to use?", 
+                                             choices = p_value_methods, selected = p_value_methods[2], inline = TRUE),
                                 hr(),
                                 h3("Multivariate Algorithm Controls"),
                                 radioButtons("bysetSelect", "If you selected more than one feature set, do you want to analyse each feature set independently?", 
@@ -281,7 +282,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                 selectInput("corMethodUnivariate", "Select a correlation method to apply",
                                             choices = cor_methods, selected = cor_methods[1], multiple = FALSE),
                                 br(),
-                                radioButtons("poolednullSelect", "If using empirical null, do you want to used a pooled empirical null (i.e., null distribution is null samples of all features)?", 
+                                radioButtons("poolednullSelect", "If using empirical null and 'null model fits' method, do you want to used a pooled empirical null (i.e., null distribution is null samples of all features)?", 
                                              choices = binaries, selected = binaries[2], inline = TRUE),
                                 br(),
                                 p("After making selections and uploading data using the controls above, click the button below to run calculations."),
@@ -291,8 +292,16 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                 tabsetPanel(id = "classifier_tabs",
                                             tabPanel("Multivariate Approach",
                                                      fluidRow(
+                                                       h3("Graphical Summary"),
                                                        column(11,
                                                               shinycssloaders::withSpinner(plotlyOutput("multivariatePlot", height = "750px"))
+                                                       )
+                                                     ),
+                                                     
+                                                     fluidRow(
+                                                       h3("Numerical Summary"),
+                                                       column(11,
+                                                              shinycssloaders::withSpinner(tableOutput("multivariateTable"))
                                                        )
                                                      )
                                             ),
@@ -307,6 +316,13 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                                        h3("Distribution of Values by Feature and Class"),
                                                        column(11,
                                                               shinycssloaders::withSpinner(plotlyOutput("top_feature_violin_plot", height = "700px"))
+                                                       )
+                                                     ),
+                                                     
+                                                     fluidRow(
+                                                       h3("Numerical Summary"),
+                                                       column(11,
+                                                              shinycssloaders::withSpinner(tableOutput("univariateTable"))
                                                        )
                                                      )
                               )

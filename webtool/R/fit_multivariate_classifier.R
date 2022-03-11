@@ -1,75 +1,93 @@
 #--------------- Helper functions ----------------
 
-#---------------------
-# Main model procedure
-#---------------------
+#----------------
+# Random shuffles
+#----------------
 
-calculate_recall <- function(matrix, x){
+calculate_accuracy <- function(x, seed){
   
-  tp <- as.numeric(matrix[x, x])
-  fn <- sum(matrix[x, -x])
-  recall_num <- tp / (tp + fn)
-  return(recall_num)
+  set.seed(seed)
+  
+  # Randomly shuffle class labels and compute accuracy
+  
+  y <- sample(x, replace = FALSE)
+  acc <- sum(x == y, na.rm = TRUE) / length(x)
+  return(acc)
 }
 
-extract_prediction_accuracy <- function(mod, testData, use_balanced_accuracy){
+simulate_null_acc <- function(x, num_permutations = 10000){
   
-  cm <- table(testData$group, predict(mod, newdata = testData))
+  # Run function over num_permutations
   
-  if(use_balanced_accuracy){
-    
-    # Calculate recall for each class and use to calculate balanced accuracy as per https://neptune.ai/blog/balanced-accuracy
-    
-    cm <- as.matrix(cm)
-    
-    recall <- 1:nrow(cm) %>%
-      purrr::map(~ calculate_recall(cm, x = .x)) %>%
-      unlist()
-    
-    statistic <- sum(recall) / length(recall)
-    
+  outs <- 1:num_permutations %>%
+    purrr::map(~ calculate_accuracy(x, seed = .x)) %>%
+    unlist()
+  
+  return(outs)
+}
+
+#--------------
+# Model fitting
+#--------------
+
+# Function for returning accuracies over the train procedure
+
+extract_prediction_accuracy <- function(mod){
+  
+  results <- as.data.frame(mod$results) %>%
+    dplyr::select(c(Accuracy, AccuracySD)) %>%
+    dplyr::rename(statistic = Accuracy,
+                  statistic_sd = AccuracySD)
+  
+  return(results)
+}
+
+# Function for iterating over random shuffle permutations of class labels
+
+fit_empirical_null_models <- function(data, s, test_method, theControl, pb = NULL, univariate = FALSE){
+  
+  # Print {purrr} iteration progress updates in the console
+  
+  if(!is.null(pb)){
+    pb$tick()$print()
   } else{
-    
-    cm <- as.data.frame(cm) %>%
-      dplyr::mutate(flag = ifelse(Var1 == Var2, "Same", "Different"))
-    
-    same_total <- cm %>%
-      dplyr::filter(flag == "Same") %>%
-      dplyr::summarise(Freq = sum(Freq)) %>%
-      dplyr::pull()
-    
-    all_total <- cm %>%
-      dplyr::summarise(Freq = sum(Freq)) %>%
-      dplyr::pull()
-    
-    statistic <- same_total / all_total
-  }
-  
-  tmp_feature <- data.frame(statistic = statistic)
-  
-  return(tmp_feature)
-}
-
-fit_empirical_null_multivariate_models <- function(mod, testdata, s, use_balanced_accuracy){
-  
-  # Print out updates for every 10 shuffles so the user gets a time guesstimate that isn't burdensome
-  
-  if (s %% 10 == 0) {
-    print(paste0("Calculating shuffle ", s))
   }
   
   # Null shuffles and computations
   
-  y <- testdata %>% dplyr::pull(group)
+  y <- data %>% dplyr::pull(group)
   y <- as.character(y)
   
   set.seed(s)
   shuffles <- sample(y, replace = FALSE)
   
-  shuffledtest <- testdata %>%
-    dplyr::mutate(group = shuffles)
+  shuffledtest <- data %>%
+    dplyr::mutate(group = shuffles) %>%
+    dplyr::mutate(group = as.factor(group))
   
-  null_models <- extract_prediction_accuracy(mod = mod, testData = shuffledtest, use_balanced_accuracy = use_balanced_accuracy)
+  if(univariate){
+    processes <- c("center", "scale")
+  } else{
+    processes <- c("center", "scale", "nzv")
+  }
+  
+  modNull <- caret::train(group ~ ., 
+                          data = shuffledtest, 
+                          method = test_method, 
+                          trControl = theControl,
+                          preProcess = processes)
+  
+  if(theControl$method == "none"){
+    
+    null_models <- as.data.frame(caret::confusionMatrix(shuffledtest$group, predict(modNull, newdata = shuffledtest))$overall) %>%
+      dplyr::mutate(category = "Null") %>%
+      dplyr::filter(row_number() == 1) %>%
+      dplyr::rename(statistic = 1)
+    
+  } else{
+    null_models <- extract_prediction_accuracy(mod = modNull)
+  }
+  
   return(null_models)
 }
 
@@ -77,12 +95,13 @@ fit_empirical_null_multivariate_models <- function(mod, testdata, s, use_balance
 # Model fitting
 #--------------
 
-fit_multivariate_models <- function(data, test_method, use_k_fold, num_folds, use_empirical_null, num_shuffles, split_prop, set = NULL,
-                                    use_balanced_accuracy){
+fit_multivariate_models <- function(data, test_method, use_k_fold, num_folds, use_empirical_null, null_testing_method, num_permutations, set = NULL){
+  
+  # Set up input matrices
   
   if(!is.null(set)){
     
-    message(paste0("Calculating models for ", set))
+    message(paste0("\nCalculating models for ", set))
     
     tmp <- data %>%
       dplyr::filter(method == set) %>%
@@ -98,17 +117,9 @@ fit_multivariate_models <- function(data, test_method, use_k_fold, num_folds, us
       dplyr::select(-c(id))
   }
   
-  # Make a train-test split
+  # Fit models
   
   set.seed(123)
-  
-  trainIndex <- caret::createDataPartition(tmp$group, 
-                                           p = split_prop, 
-                                           list = FALSE, 
-                                           times = 1)
-  
-  dataTrain <- tmp[ trainIndex,]
-  dataTest  <- tmp[-trainIndex,]
   
   if(use_k_fold){
     
@@ -119,46 +130,70 @@ fit_multivariate_models <- function(data, test_method, use_k_fold, num_folds, us
                                       classProbs = TRUE)
     
     mod <- caret::train(group ~ ., 
-                        data = dataTrain, 
+                        data = tmp, 
                         method = test_method, 
                         trControl = fitControl,
                         preProcess = c("center", "scale", "nzv"))
     
+    # Get main predictions
+    
+    mainOuts <- extract_prediction_accuracy(mod = mod) %>%
+      dplyr::mutate(category = "Main")
+    
   } else{
     
+    fitControl <- caret::trainControl(method = "none",
+                                      classProbs = TRUE)
+    
     mod <- caret::train(group ~ ., 
-                        data = dataTrain, 
+                        data = tmp, 
                         method = test_method, 
+                        trControl = fitControl,
                         preProcess = c("center", "scale", "nzv"))
+    
+    # Get main predictions
+    
+    mainOuts <- as.data.frame(caret::confusionMatrix(tmp$group, predict(mod, newdata = tmp))$overall) %>%
+      dplyr::mutate(category = "Main") %>%
+      dplyr::filter(row_number() == 1) %>%
+      dplyr::rename(statistic = 1)
   }
   
-  # Get main predictions
-  
-  mainOuts <- extract_prediction_accuracy(mod = mod, testData = dataTest, use_balanced_accuracy = use_balanced_accuracy) %>%
-    dplyr::mutate(category = "Main")
-    
   if(use_empirical_null){
+    
+    if(null_testing_method == "null model fits"){
       
-    nullOuts <- 1:num_shuffles %>%
-      purrr::map( ~ fit_empirical_null_multivariate_models(mod = mod, 
-                                                           testdata = dataTest, 
-                                                           s = .x,
-                                                           use_balanced_accuracy = use_balanced_accuracy))
+      # Set up progress bar for {purrr::map} iterations
       
-    nullOuts <- data.table::rbindlist(nullOuts, use.names = TRUE) %>%
-      dplyr::mutate(category = "Null")
+      pb <- dplyr::progress_estimated(length(1:num_permutations))
       
-    finalOuts <- dplyr::bind_rows(mainOuts, nullOuts)
+      # Run procedure
+      
+      nullOuts <- 1:num_permutations %>%
+        purrr::map( ~ fit_empirical_null_models(data = tmp, 
+                                                s = .x,
+                                                test_method = test_method,
+                                                theControl = fitControl,
+                                                pb = pb,
+                                                univariate = FALSE))
+      
+      nullOuts <- data.table::rbindlist(nullOuts, use.names = TRUE) %>%
+        dplyr::mutate(category = "Null")
+      
+      finalOuts <- dplyr::bind_rows(mainOuts, nullOuts)
       
     } else{
       finalOuts <- mainOuts
     }
+    
+  } else{
+    finalOuts <- mainOuts
+  }
   
   if(!is.null(set)){
     finalOuts <- finalOuts %>%
       dplyr::mutate(method = set,
-                    num_features_used = (ncol(dataTrain) - 1))
-  } else{
+                    num_features_used = (ncol(tmp) - 1))
   }
   
   return(finalOuts)
@@ -168,40 +203,48 @@ fit_multivariate_models <- function(data, test_method, use_k_fold, num_folds, us
 # p-value calculation
 #--------------------
 
-calculate_multivariate_statistics <- function(data, set = NULL){
+calculate_multivariate_statistics <- function(data, set = NULL, p_value_method){
+  
+  # Wrangle vectors
   
   if(!is.null(set)){
-    tmp <- data %>%
-      dplyr::filter(method == set)
+    vals <- data %>%
+      dplyr::filter(method == set | method == "model free shuffles")
   } else{
-    tmp <- data
+    vals <- data
   }
   
-  # Compute mean for main model
-  
-  statistic_value <- tmp %>%
+  true_val <- vals %>%
     dplyr::filter(category == "Main") %>%
     dplyr::pull(statistic)
   
-  # Compute p-value against empirical null samples
+  stopifnot(length(true_val) == 1)
   
-  nulls <- tmp %>%
-    dplyr::filter(category == "Null")
+  nulls <- vals %>%
+    dplyr::filter(category == "Null") %>%
+    dplyr::pull(statistic)
   
-  nulls_above_main <- nulls %>%
-    dplyr::filter(statistic >= statistic_value)
+  if(p_value_method == "empirical"){
+    
+    # Use ECDF to calculate p-value
+    
+    fn <- stats::ecdf(nulls)
+    p_value <- 1 - fn(true_val)
+    
+  } else{
+    
+    # Calculate p-value from Gaussian with null distribution parameters
+    
+    p_value <- stats::pnorm(true_val, mean = mean(nulls), sd = stats::sd(nulls), lower.tail = FALSE)
+  }
   
-  p_value <- nrow(nulls_above_main) / nrow(nulls)
-  
-  tmp_outputs <- data.frame(statistic_value = statistic_value,
+  tmp_outputs <- data.frame(statistic_value = true_val,
                             p_value = p_value)
   
   if(!is.null(set)){
     tmp_outputs <- tmp_outputs %>%
       dplyr::mutate(method = set) %>%
       dplyr::select(c(method, statistic_value, p_value))
-  } else{
-    
   }
   
   return(tmp_outputs)
@@ -213,25 +256,25 @@ calculate_multivariate_statistics <- function(data, set = NULL){
 #' @import dplyr
 #' @importFrom magrittr %>%
 #' @import ggplot2
-#' @importFrom tidyr drop_na pivot_wider crossing
+#' @importFrom tidyr drop_na pivot_wider pivot_longer
 #' @importFrom tibble rownames_to_column
 #' @importFrom data.table rbindlist
-#' @importFrom stats sd reorder
+#' @importFrom stats sd reorder ecdf pnorm
 #' @importFrom purrr map
 #' @importFrom janitor clean_names
-#' @importFrom caret createDataPartition preProcess train
-#' @param data the dataframe containing the raw feature matrix
+#' @importFrom caret preProcess train confusionMatrix
+#' @param data the dataframe containing the raw feature data as calculated by \code{theft::calculate_features}
 #' @param id_var a string specifying the ID variable to group data on (if one exists). Defaults to \code{"id"}
 #' @param group_var a string specifying the grouping variable that the data aggregates to. Defaults to \code{"group"}
 #' @param by_set Boolean specifying whether to compute classifiers for each feature set. Defaults to \code{FALSE}
 #' @param test_method the algorithm to use for quantifying class separation. Defaults to \code{"gaussprRadial"}
-#' @param use_empirical_null a Boolean specifying whether to use empirical null procedures to compute p-values. Defaults to \code{FALSE}
-#' @param use_k_fold a Boolean specifying whether to use k-fold procedures for generating a distribution of classification accuracy estimates. Defaults to \code{FALSE}
+#' @param use_k_fold a Boolean specifying whether to use k-fold procedures for generating a distribution of classification accuracy estimates. Defaults to \code{TRUE}
 #' @param num_folds an integer specifying the number of folds (train-test splits) to perform if \code{use_k_fold} is set to \code{TRUE}. Defaults to \code{10}
-#' @param split_prop a double between 0 and 1 specifying the proportion of input data that should go into the training set (therefore 1 - p goes into the test set). Defaults to \code{0.8}
-#' @param num_shuffles an integer specifying the number of class label shuffles to perform. Defaults to \code{50}
-#' @param use_balanced_accuracy a Boolean specifying whether to use balanced accuracy as the performance metric instead of overall accuracy
-#' @return an object of class list containing summaries of the classification models
+#' @param use_empirical_null a Boolean specifying whether to use empirical null procedures to compute p-values. Defaults to \code{FALSE}
+#' @param null_testing_method a string specifying the type of statistical method to use to calculate p-values. Defaults to \code{model free shuffles}
+#' @param p_value_method a string specifying the method of calculating p-values. Defaults to \code{"empirical"}
+#' @param num_permutations an integer specifying the number of class label shuffles to perform if \code{use_empirical_null} is \code{TRUE}. Defaults to \code{100}
+#' @return an object of class list containing dataframe summaries of the classification models and a \code{ggplot} object if \code{by_set} is \code{TRUE}
 #' @author Trent Henderson
 #' @export
 #' @examples
@@ -248,20 +291,20 @@ calculate_multivariate_statistics <- function(data, set = NULL){
 #'   group_var = "group",
 #'   by_set = FALSE,
 #'   test_method = "gaussprRadial",
-#'   use_empirical_null = TRUE,
 #'   use_k_fold = TRUE,
 #'   num_folds = 10,
-#'   split_prop = 0.8,
-#'   num_shuffles = 50,
-#'   use_balanced_accuracy = FALSE) 
+#'   use_empirical_null = TRUE,
+#'   null_testing_method = "model free shuffles",
+#'   p_value_method = "empirical",
+#'   num_permutations = 100) 
 #' }
 #' 
 
 fit_multivariate_classifier <- function(data, id_var = "id", group_var = "group",
                                         by_set = FALSE, test_method = "gaussprRadial",
-                                        use_empirical_null = FALSE, use_k_fold = FALSE,
-                                        num_folds = 10, split_prop = 0.8, num_shuffles = 50,
-                                        use_balanced_accuracy = FALSE){
+                                        use_k_fold = TRUE, num_folds = 10, 
+                                        use_empirical_null = FALSE, null_testing_method = c("model free shuffles", "null model fits"),
+                                        p_value_method = c("empirical", "gaussian"), num_permutations = 100){
   
   #---------- Check arguments ------------
   
@@ -291,6 +334,44 @@ fit_multivariate_classifier <- function(data, id_var = "id", group_var = "group"
     stop("id_var should be a string specifying a variable in the input data that uniquely identifies each observation.")
   }
   
+  # Null testing options
+  
+  theoptions <- c("model free shuffles", "null model fits")
+  
+  if(is.null(null_testing_method) || missing(null_testing_method)){
+    null_testing_method <- "model free shuffles"
+    message("No argument supplied to null_testing_method. Using 'model free shuffles' as default.")
+  }
+  
+  if(length(null_testing_method) != 1){
+    stop("null_testing_method should be a single string of either 'model free shuffles' or 'null model fits'.")
+  }
+  
+  if(null_testing_method %ni% theoptions){
+    stop("null_testing_method should be a single string of either 'model free shuffles' or 'null model fits'.")
+  }
+  
+  if(null_testing_method == "model free shuffles" && num_permutations < 1000){
+    message("Null testing method 'model free shuffles' is very fast. Consider running more permutations for more reliable results. N = 10000 is recommended.")
+  }
+  
+  # p-value options
+  
+  theoptions_p <- c("empirical", "gaussian")
+  
+  if(is.null(p_value_method) || missing(p_value_method)){
+    p_value_method <- "empirical"
+    message("No argument supplied to p_value_method Using 'empirical' as default.")
+  }
+  
+  if(length(p_value_method) != 1){
+    stop("p_value_method should be a single string of either 'empirical' or 'gaussian'.")
+  }
+  
+  if(p_value_method %ni% theoptions_p){
+    stop("p_value_method should be a single string of either 'empirical' or 'gaussian'.")
+  }
+  
   #------------- Renaming columns -------------
   
   if (is.null(id_var)){
@@ -312,7 +393,7 @@ fit_multivariate_classifier <- function(data, id_var = "id", group_var = "group"
   
   # Set defaults for classification method
   
-  if(((missing(test_method) || is.null(test_method)))){
+  if((missing(test_method) || is.null(test_method))){
     test_method <- "gaussprRadial"
     message("test_method is NULL or missing, fitting 'gaussprRadial' by default.")
   }
@@ -327,24 +408,16 @@ fit_multivariate_classifier <- function(data, id_var = "id", group_var = "group"
     stop("num_folds should be a positive integer. 10 folds is recommended.")
   }
   
-  if(use_empirical_null == TRUE && !is.numeric(num_shuffles)){
-    stop("num_shuffles should be a postive integer. A minimum of 50 shuffles is recommended.")
+  if(use_empirical_null == TRUE && !is.numeric(num_permutations)){
+    stop("num_permutations should be a postive integer. A minimum of 50 permutations is recommended.")
   }
   
-  if(use_empirical_null == TRUE && num_shuffles < 3){
-    stop("num_shuffles should be a positive integer >= 3 for empirical null calculations. A minimum of 50 shuffles is recommended.")
+  if(use_empirical_null == TRUE && num_permutations < 3){
+    stop("num_permutations should be a positive integer >= 3 for empirical null calculations. A minimum of 50 permutations is recommended.")
   }
   
   if(use_k_fold == TRUE && num_folds < 1){
     stop("num_folds should be a positive integer. 10 folds is recommended.")
-  }
-  
-  if(!is.numeric(split_prop)){
-    stop("split_prop should be a scalar between 0 and 1 specifying the proportion of input data that should go into the training set.")
-  }
-  
-  if(split_prop < 0 || split_prop > 1){
-    stop("split_prop should be a scalar between 0 and 1 specifying the proportion of input data that should go into the training set.")
   }
   
   #------------- Preprocess data --------------
@@ -397,11 +470,12 @@ fit_multivariate_classifier <- function(data, id_var = "id", group_var = "group"
   #---------------------
   
   classifier_name <- test_method
+  statistic_name <- "Mean classification accuracy"
   
-  if(use_balanced_accuracy){
-    statistic_name <- "Balanced classification accuracy"
-  } else{
-    statistic_name <- "Classification accuracy"
+  # Very important coffee console message
+  
+  if(null_testing_method == "null model fits" & num_permutations > 100){
+    message("This will take a while. Great reason to go grab a coffee and relax ^_^")
   }
   
   if(by_set){
@@ -416,10 +490,9 @@ fit_multivariate_classifier <- function(data, id_var = "id", group_var = "group"
                                            use_k_fold = use_k_fold, 
                                            num_folds = num_folds, 
                                            use_empirical_null = use_empirical_null, 
-                                           num_shuffles = num_shuffles, 
-                                           split_prop = split_prop,
-                                           set = .x,
-                                           use_balanced_accuracy = use_balanced_accuracy))
+                                           null_testing_method = null_testing_method,
+                                           num_permutations = num_permutations, 
+                                           set = .x))
     
     output <- data.table::rbindlist(output, use.names = TRUE)
     
@@ -430,51 +503,65 @@ fit_multivariate_classifier <- function(data, id_var = "id", group_var = "group"
                                       use_k_fold = use_k_fold, 
                                       num_folds = num_folds, 
                                       use_empirical_null = use_empirical_null, 
-                                      num_shuffles = num_shuffles,
-                                      split_prop = split_prop,
-                                      set = NULL,
-                                      use_balanced_accuracy = use_balanced_accuracy)
+                                      null_testing_method = null_testing_method,
+                                      num_permutations = num_permutations,
+                                      set = NULL)
+  }
+  
+  # Run nulls if random shuffles are to be used
+  
+  if(null_testing_method == "model free shuffles"){
+    
+    # Run random shuffles procedure
+    
+    nullOuts <- data.frame(statistic = simulate_null_acc(x = data_id$group, num_permutations = num_permutations)) %>%
+      dplyr::mutate(statistic_sd = NA,
+                    category = "Null",
+                    method = "model free shuffles",
+                    num_features_used = NA)
+    
+    output <- dplyr::bind_rows(output, nullOuts)
   }
   
   #--------------- Evaluate results ---------------
   
   if(by_set){
-      
+    
     #---------- Draw bar plot ---------
     
-    # Get final number of features used by set
-    
-    feat_nums <- data_id %>% 
-      dplyr::select(c(method, names)) %>%
-      dplyr::distinct() %>%
-      dplyr::group_by(method) %>%
-      dplyr::summarise(num_feats = dplyr::n()) %>%
-      dplyr::ungroup()
-      
     # Draw plot
-      
-    myPlot <- output %>%
-      dplyr::filter(category == "Main") %>%
-      dplyr::inner_join(feat_nums, by = c("method" = "method")) %>%
-      dplyr::mutate(method = paste0(method, " (", num_feats, ")")) %>%
-      dplyr::mutate(statistic = statistic * 100) %>%
-      ggplot2::ggplot(ggplot2::aes(x = stats::reorder(method, -statistic), text = paste('<b>Method: </b>', method,
-                                                                                      paste0('<br><b>Classification accuracy: </b>', round(statistic, digits = 2), "%")))) +
-      ggplot2::geom_bar(ggplot2::aes(y = statistic, fill = method), stat = "identity")
     
-    if(use_balanced_accuracy){
+    FeatureSetResultsPlot <- output %>%
+      dplyr::filter(category == "Main") %>%
+      dplyr::mutate(method = paste0(method, " (", num_features_used, ")")) %>%
+      dplyr::mutate(statistic = statistic * 100)
+    
+    if(use_k_fold){
       
-      myPlot <- myPlot +
-        ggplot2::labs(y = "Balanced classification accuracy (%)")
+      FeatureSetResultsPlot <- FeatureSetResultsPlot %>%
+        mutate(statistic_sd = statistic_sd * 100) %>%
+        dplyr::mutate(lower = statistic - (2 * statistic_sd),
+                      upper = statistic + (2 * statistic_sd)) %>%
+        ggplot2::ggplot(ggplot2::aes(x = stats::reorder(method, -statistic), text = paste('<b>Method: </b>', method,
+                                                                                          paste0('<br><b>Classification accuracy: </b>', 
+                                                                                                 round(statistic, digits = 2), "%")))) +
+        ggplot2::geom_bar(ggplot2::aes(y = statistic, fill = method), stat = "identity") +
+        ggplot2::geom_errorbar(ggplot2::aes(ymin = lower, ymax = upper), colour = "black") +
+        ggplot2::labs(subtitle = "Number of features is indicated in parentheses. Error bars are +- 2 times pointwise SD")
       
     } else{
-      
-      myPlot <- myPlot +
-        ggplot2::labs(y = "Classification accuracy (%)")
+      FeatureSetResultsPlot <- FeatureSetResultsPlot %>%
+        ggplot2::ggplot(ggplot2::aes(x = stats::reorder(method, -statistic), text = paste('<b>Method: </b>', method,
+                                                                                          paste0('<br><b>Classification accuracy: </b>', 
+                                                                                                 round(statistic, digits = 2), "%")))) +
+        ggplot2::geom_bar(ggplot2::aes(y = statistic, fill = method), stat = "identity") +
+        ggplot2::labs(subtitle = "Number of features is indicated in parentheses")
     }
     
-    myPlot <- myPlot +
-      ggplot2::labs(x = "Feature set",
+    FeatureSetResultsPlot <- FeatureSetResultsPlot +
+      ggplot2::labs(title = "Classification accuracy by feature set",
+                    y = "Classification accuracy (%)",
+                    x = "Feature set",
                     fill = NULL) +
       ggplot2::theme_bw() +
       ggplot2::scale_y_continuous(limits = c(0, 100),
@@ -487,16 +574,16 @@ fit_multivariate_classifier <- function(data, id_var = "id", group_var = "group"
     
     #-------- Convert to interactive graphic --------
     
-    myPlot <- ggplotly(myPlot, tooltip = c("text")) %>%
+    FeatureSetResultsPlot <- ggplotly(FeatureSetResultsPlot, tooltip = c("text")) %>%
       layout(legend = list(orientation = "h", x = 0, y = -0.2)) %>%
       config(displayModeBar = FALSE)
-      
+    
     #---------- Compute p values ------
-      
+    
     if(use_empirical_null){
-        
+      
       TestStatistics <- sets %>%
-        purrr::map(~ calculate_multivariate_statistics(data = output, set = .x))
+        purrr::map(~ calculate_multivariate_statistics(data = output, set = .x, p_value_method = p_value_method))
       
       TestStatistics <- data.table::rbindlist(TestStatistics, use.names = TRUE) %>%
         dplyr::mutate(classifier_name = classifier_name,
@@ -506,42 +593,30 @@ fit_multivariate_classifier <- function(data, id_var = "id", group_var = "group"
         dplyr::mutate(classifier_name = classifier_name,
                       statistic_name = statistic_name)
       
-      myList <- list(myPlot, TestStatistics, output)
-      names(myList) <- c("myPlot", "TestStatistics", "RawClassificationResults")
-        
-      } else{
-        
-        output <- output %>%
-          dplyr::mutate(classifier_name = classifier_name,
-                        statistic_name = statistic_name) %>%
-          dplyr::select(-c(category))
-        
-        myList <- list(myPlot, output)
-        names(myList) <- c("myPlot", "RawClassificationResults")
+      myList <- list(FeatureSetResultsPlot, TestStatistics, output)
+      names(myList) <- c("FeatureSetResultsPlot", "TestStatistics", "RawClassificationResults")
+      
+    } else{
+      
+      output <- output %>%
+        dplyr::mutate(classifier_name = classifier_name,
+                      statistic_name = statistic_name) %>%
+        dplyr::select(-c(category))
+      
+      myList <- list(FeatureSetResultsPlot, output)
+      names(myList) <- c("FeatureSetResultsPlot", "RawClassificationResults")
     }
   } else{
     
     # Draw plot
     
-    myPlot <- output %>%
+    FeatureSetResultsPlot <- output %>%
       dplyr::filter(category == "Main") %>%
       dplyr::mutate(statistic = statistic * 100) %>%
       dplyr::mutate(method = "All Features") %>%
       ggplot2::ggplot(ggplot2::aes(x = method, text = paste(paste0('<br><b>Classification accuracy: </b>', round(statistic, digits = 2), "%")))) +
-      ggplot2::geom_bar(ggplot2::aes(y = statistic), stat = "identity", fill = "#1B9E77")
-    
-    if(use_balanced_accuracy){
-      
-      myPlot <- myPlot +
-        ggplot2::labs(y = "Balanced classification accuracy (%)")
-      
-    } else{
-      
-      myPlot <- myPlot +
-        ggplot2::labs(y = "Classification accuracy (%)")
-    }
-    
-    myPlot <- myPlot +
+      ggplot2::geom_bar(ggplot2::aes(y = statistic), stat = "identity", fill = "#1B9E77") +
+      ggplot2::labs(y = "Classification accuracy (%)") +
       ggplot2::labs(x = NULL) +
       ggplot2::theme_bw() +
       ggplot2::scale_y_continuous(limits = c(0, 100),
@@ -550,13 +625,13 @@ fit_multivariate_classifier <- function(data, id_var = "id", group_var = "group"
       ggplot2::theme(panel.grid.minor = ggplot2::element_blank(),
                      legend.position = "none",
                      axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
-      
-      #-------- Convert to interactive graphic --------
-      
-      myPlot <- ggplotly(myPlot, tooltip = c("text")) %>%
-        layout(legend = list(orientation = "h", x = 0, y = -0.2)) %>%
-        config(displayModeBar = FALSE)
-      
+    
+    #-------- Convert to interactive graphic --------
+    
+    FeatureSetResultsPlot <- ggplotly(FeatureSetResultsPlot, tooltip = c("text")) %>%
+      layout(legend = list(orientation = "h", x = 0, y = -0.2)) %>%
+      config(displayModeBar = FALSE)
+    
     if(use_empirical_null){
       
       TestStatistics <- calculate_multivariate_statistics(data = output, set = NULL) %>%
@@ -567,8 +642,8 @@ fit_multivariate_classifier <- function(data, id_var = "id", group_var = "group"
         dplyr::mutate(classifier_name = classifier_name,
                       statistic_name = statistic_name)
       
-      myList <- list(myPlot, TestStatistics, output)
-      names(myList) <- c("myPlot", "TestStatistics", "RawClassificationResults")
+      myList <- list(FeatureSetResultsPlot, TestStatistics, output)
+      names(myList) <- c("FeatureSetResultsPlot", "TestStatistics", "RawClassificationResults")
       
     } else{
       
@@ -577,8 +652,8 @@ fit_multivariate_classifier <- function(data, id_var = "id", group_var = "group"
                       statistic_name = statistic_name) %>%
         dplyr::select(-c(category))
       
-      myList <- list(myPlot, output)
-      names(myList) <- c("myPlot", "RawClassificationResults") 
+      myList <- list(FeatureSetResultsPlot, output)
+      names(myList) <- c("FeatureSetResultsPlot", "RawClassificationResults") 
     }
   }
   return(myList)
