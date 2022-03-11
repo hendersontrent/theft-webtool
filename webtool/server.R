@@ -455,12 +455,6 @@ shinyServer <- function(input, output, session) {
       by_set <- FALSE
     }
     
-    if(input$balancedaccuracySelect == binaries[2]){
-      use_balanced_accuracy <- TRUE
-    } else{
-      use_balanced_accuracy <- FALSE
-    }
-    
     if(input$kfoldSelect == binaries[2]){
       use_k_fold <- TRUE
     } else{
@@ -477,9 +471,9 @@ shinyServer <- function(input, output, session) {
     
     multivariateOutputList <- fit_multivariate_classifier(featureMatrix(), id_var = "id", group_var = "group",
                                                        by_set = by_set, test_method = input$classifierSelect,
-                                                       use_empirical_null = use_empirical_null, use_k_fold = use_k_fold,
-                                                       num_folds = input$kfoldSlider, split_prop = input$splitpropSlider, 
-                                                       num_shuffles = input$shuffleSlider, use_balanced_accuracy = use_balanced_accuracy)
+                                                       use_k_fold = use_k_fold, num_folds = input$kfoldSlider, 
+                                                       use_empirical_null = use_empirical_null, null_testing_method = input$nullmethodSelect,
+                                                       p_value_method = input$pvaluemethodSelect, num_permutations = input$permutationSlider)
     
     return(multivariateOutputList)
   })
@@ -497,7 +491,38 @@ shinyServer <- function(input, output, session) {
     
     # Render plot
     
-    multivariateOutputs()$myPlot
+    multivariateOutputs()$FeatureSetResultsPlot
+  })
+  
+  # Get table summary
+  
+  output$multivariateTable <- renderTable({
+    
+    # Account for lack of data upload to avoid error message
+    
+    validate(
+      need(multivariateOutputs(), "Please upload a dataset and specify controls to get started."
+      )
+    )
+    
+    if(input$empiricalnullSelect == "No"){
+      
+      multivariateOutputs()$RawClassificationResults %>%
+        filter(method %in% c("catch22", "feasts", "tsfeatures")) %>%
+        dplyr::select(c(method, statistic, classifier_name, statistic_name)) %>%
+        rename(Method = method,
+               `Classification Accuracy` = statistic,
+               `Classifier Name` = classifier_name,
+               `Statistic Name` = statistic_name)
+      
+    } else{
+      multivariateOutputs()$TestStatistics %>%
+        rename(Method = method,
+               `Classification Accuracy` = statistic_value,
+               `p value` = p_value,
+               `Classifier Name` = classifier_name,
+               `Statistic Name` = statistic_name)
+    }
   })
   
   #----------------------
@@ -517,12 +542,6 @@ shinyServer <- function(input, output, session) {
     
     # Set up set specification
     
-    if(input$balancedaccuracySelect == binaries[2]){
-      use_balanced_accuracy <- TRUE
-    } else{
-      use_balanced_accuracy <- FALSE
-    }
-    
     if(input$kfoldSelect == binaries[2]){
       use_k_fold <- TRUE
     } else{
@@ -541,14 +560,21 @@ shinyServer <- function(input, output, session) {
       pool_empirical_null <- FALSE
     }
     
+    # Catch cases where user makes an error in the browser to avoid red message
+    
+    if(input$nullmethodSelect == "model free shuffles" && pool_empirical_null){
+      pool_empirical_null <- FALSE
+    }
+    
     # Fit model(s) and draw graphic
     
     univariateOutputList <- compute_top_features(featureMatrix(), id_var = "id", group_var = "group",
                                                  num_features = input$numFeaturesSlider, normalise_violin_plots = FALSE, test_method = input$classifierSelect,
-                                                 method = "z-score", cor_method = input$corMethodUnivariate, use_empirical_null = use_empirical_null, 
-                                                 use_k_fold = use_k_fold, num_folds = input$kfoldSlider, split_prop = input$splitpropSlider, 
-                                                 num_shuffles = input$shuffleSlider, pool_empirical_null = pool_empirical_null,
-                                                 use_balanced_accuracy = use_balanced_accuracy)
+                                                 method = "z-score", cor_method = input$corMethodUnivariate, 
+                                                 use_k_fold = use_k_fold, num_folds = input$kfoldSlider,
+                                                 use_empirical_null = use_empirical_null, null_testing_method = input$nullmethodSelect,
+                                                 p_value_method = input$pvaluemethodSelect, num_permutations = input$permutationSlider, 
+                                                 pool_empirical_null = pool_empirical_null)
     
     return(univariateOutputList)
   })
@@ -583,6 +609,25 @@ shinyServer <- function(input, output, session) {
     # Render plot
     
     univariateOutputs()$ViolinPlots
+  })
+  
+  # Get table summary
+  
+  output$univariateTable <- renderTable({
+    
+    # Account for lack of data upload to avoid error message
+    
+    validate(
+      need(univariateOutputs(), "Please upload a dataset and specify controls to get started."
+      )
+    )
+    
+    univariateOutputs()$ResultsTable %>%
+      rename(Feature = feature,
+             `Classification Accuracy` = statistic_value,
+             `p value` = p_value,
+             `Classifier Name` = classifier_name,
+             `Statistic Name` = statistic_name)
   })
   
 }
