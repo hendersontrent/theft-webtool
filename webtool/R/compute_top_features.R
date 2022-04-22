@@ -131,8 +131,8 @@ plot_feature_discrimination <- function(data, id_var = "id", group_var = "group"
 #-------------- Main exported function ---------------
 
 #' Return an object containing results from top-performing features on a classification task
+#' @importFrom rlang .data
 #' @import dplyr
-#' @importFrom magrittr %>%
 #' @import ggplot2
 #' @importFrom tidyr drop_na pivot_wider
 #' @importFrom stats hclust dist cor
@@ -146,6 +146,7 @@ plot_feature_discrimination <- function(data, id_var = "id", group_var = "group"
 #' @param method a rescaling/normalising method to apply. Defaults to \code{"RobustSigmoid"}
 #' @param cor_method the correlation method to use. Defaults to \code{"pearson"}
 #' @param test_method the algorithm to use for quantifying class separation. Defaults to \code{"gaussprRadial"}
+#' @param use_balanced_accuracy a Boolean specifying whether to use balanced accuracy as the summary metric for caret model training. Defaults to \code{FALSE}
 #' @param use_k_fold a Boolean specifying whether to use k-fold procedures for generating a distribution of classification accuracy estimates if a \code{caret} model is specified for \code{test_method}. Defaults to \code{ FALSE}
 #' @param num_folds an integer specifying the number of k-folds to perform if \code{use_k_fold} is set to \code{TRUE}. Defaults to \code{10}
 #' @param use_empirical_null a Boolean specifying whether to use empirical null procedures to compute p-values if a \code{caret} model is specified for \code{test_method}. Defaults to \code{FALSE}
@@ -153,17 +154,19 @@ plot_feature_discrimination <- function(data, id_var = "id", group_var = "group"
 #' @param p_value_method a string specifying the method of calculating p-values. Defaults to \code{"empirical"}
 #' @param num_permutations an integer specifying the number of class label shuffles to perform if \code{use_empirical_null} is \code{TRUE}. Defaults to \code{50}
 #' @param pool_empirical_null a Boolean specifying whether to use the pooled empirical null distribution of all features or each features' individual empirical null distribution if a \code{caret} model is specified for \code{test_method} use_empirical_null is \code{TRUE}. Defaults to \code{FALSE}
+#' @param seed fixed number for R's random number generator to ensure reproducibility
 #' @return an object of class list containing a dataframe of results, a feature x feature matrix plot, and a violin plot
 #' @author Trent Henderson
 #' @export
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' featMat <- calculate_features(data = simData, 
 #'   id_var = "id", 
 #'   time_var = "timepoint", 
 #'   values_var = "values", 
 #'   group_var = "process", 
-#'   feature_set = "catch22")
+#'   feature_set = "catch22",
+#'   seed = 123)
 #'   
 #' compute_top_features(featMat,
 #'   id_var = "id",
@@ -173,13 +176,15 @@ plot_feature_discrimination <- function(data, id_var = "id", group_var = "group"
 #'   method = "RobustSigmoid",
 #'   cor_method = "pearson",
 #'   test_method = "gaussprRadial",
+#'   use_balanced_accuracy = FALSE,
 #'   use_k_fold = FALSE,
 #'   num_folds = 10,
 #'   use_empirical_null = TRUE,
 #'   null_testing_method = "model free shuffles",
-#'   p_value_method = "empirical",
+#'   p_value_method = "gaussian",
 #'   num_permutations = 100,
-#'   pool_empirical_null = FALSE) 
+#'   pool_empirical_null = FALSE,
+#'   seed = 123) 
 #' }
 #' 
 
@@ -188,11 +193,11 @@ compute_top_features <- function(data, id_var = "id", group_var = "group",
                                  normalise_violin_plots = FALSE,
                                  method = c("z-score", "Sigmoid", "RobustSigmoid", "MinMax"),
                                  cor_method = c("pearson", "spearman"),
-                                 test_method = "gaussprRadial",
+                                 test_method = "gaussprRadial", use_balanced_accuracy = FALSE,
                                  use_k_fold = FALSE, num_folds = 10, 
                                  use_empirical_null = FALSE, null_testing_method = c("model free shuffles", "null model fits"),
                                  p_value_method = c("empirical", "gaussian"), num_permutations = 50,
-                                 pool_empirical_null = FALSE){
+                                 pool_empirical_null = FALSE, seed = 123){
   
   # Make RobustSigmoid the default
   
@@ -284,7 +289,7 @@ compute_top_features <- function(data, id_var = "id", group_var = "group",
   }
   
   if(null_testing_method == "model free shuffles" && pool_empirical_null){
-    stop("'model free shuffles' and pooled empirical null are incompatible (pooled null combines each feature's null into a grand null and features don't get a null if 'model free shuffles' is used). Please respecify.")
+    stop("'model free shuffles' and pooled empirical null are incompatible (pooled null combines each feature's null into a grand null and features don'tt get a null if 'model free shuffles' is used). Please respecify.")
   }
   
   # p-value options
@@ -292,8 +297,8 @@ compute_top_features <- function(data, id_var = "id", group_var = "group",
   theoptions_p <- c("empirical", "gaussian")
   
   if(is.null(p_value_method) || missing(p_value_method)){
-    p_value_method <- "empirical"
-    message("No argument supplied to p_value_method Using 'empirical' as default.")
+    p_value_method <- "gaussian"
+    message("No argument supplied to p_value_method Using 'gaussian' as default.")
   }
   
   if(length(p_value_method) != 1){
@@ -322,7 +327,7 @@ compute_top_features <- function(data, id_var = "id", group_var = "group",
     data_id <- data %>%
       dplyr::rename(id = dplyr::all_of(id_var),
                     group = dplyr::all_of(group_var)) %>%
-      dplyr::select(c(id, group, method, names, values))
+      dplyr::select(c(.data$id, .data$group, .data$method, .data$names, .data$values))
   }
   
   num_classes <- length(unique(data_id$group)) # Get number of classes in the data
@@ -374,15 +379,22 @@ compute_top_features <- function(data, id_var = "id", group_var = "group",
     message(paste0("Number of specified features exceeds number of features in your data. Automatically adjusting to ", num_features))
   }
   
+  # Seed
+  
+  if(is.null(seed) || missing(seed)){
+    seed <- 123
+    message("No argument supplied to seed, using 123 as default.")
+  }
+  
   # Prep factor levels as names for {caret} if the 3 base two-class options aren't being used
   
   if(test_method %ni% c("t-test", "wilcox", "binomial logistic")){
     data_id <- data_id %>%
-      dplyr::mutate(group = make.names(group),
-                    group = as.factor(group))
+      dplyr::mutate(group = make.names(.data$group),
+                    group = as.factor(.data$group))
   } else{
     data_id <- data_id %>%
-      dplyr::mutate(group = as.factor(group))
+      dplyr::mutate(group = as.factor(.data$group))
   }
   
   #---------------  Computations ----------------
@@ -393,34 +405,102 @@ compute_top_features <- function(data, id_var = "id", group_var = "group",
   
   # Fit algorithm
   
-  classifierOutputs <- fit_feature_classifier(data_id, 
-                                              id_var = "id", 
-                                              group_var = "group",
-                                              test_method = test_method,
-                                              use_k_fold = use_k_fold,
-                                              num_folds = num_folds,
-                                              use_empirical_null = use_empirical_null,
-                                              null_testing_method = null_testing_method,
-                                              p_value_method = p_value_method,
-                                              num_permutations = num_permutations,
-                                              pool_empirical_null = pool_empirical_null,
-                                              return_raw_estimates = FALSE)
+  classifierOutputs <- fit_single_feature_classifier(data_id, 
+                                                     id_var = "id", 
+                                                     group_var = "group",
+                                                     test_method = test_method,
+                                                     use_balanced_accuracy = use_balanced_accuracy,
+                                                     use_k_fold = use_k_fold,
+                                                     num_folds = num_folds,
+                                                     use_empirical_null = use_empirical_null,
+                                                     null_testing_method = null_testing_method,
+                                                     p_value_method = p_value_method,
+                                                     num_permutations = num_permutations,
+                                                     pool_empirical_null = pool_empirical_null,
+                                                     seed = seed,
+                                                     return_raw_estimates = FALSE)
   
   # Filter results to get list of top features
-  # This is a shortened version of the `theft` "if" conditions here for simplicity
   
-  ResultsTable <- classifierOutputs %>%
-      dplyr::slice_max(statistic_value, n = num_features)
+  if(test_method %in% c("t-test", "wilcox", "binomial logistic")){
+    
+    message("\nSelecting top features using p-values.")
+    
+    ResultsTable <- classifierOutputs %>%
+      dplyr::slice_min(.data$p_value, n = num_features)
+    
+  } else{
+    
+    if(use_empirical_null == FALSE){
+      
+      if(use_balanced_accuracy){
+        message("\nSelecting top features using mean balanced classification accuracy.")
+        
+        ResultsTable <- classifierOutputs %>%
+          dplyr::slice_max(.data$statistic_value, n = num_features)
+        
+      } else{
+        message("\nSelecting top features using mean classification accuracy.")
+        
+        ResultsTable <- classifierOutputs %>%
+          dplyr::slice_max(.data$statistic_value, n = num_features)
+      }
+    } else{
+      
+      # Catch cases where most of the p-values are the same (likely 0 given empirical null performance from experiments)
+      
+      if(use_balanced_accuracy){
+        
+        unique_p_values <- classifierOutputs %>%
+          dplyr::slice_min(.data$p_value_balanced_accuracy, n = num_features)
+        
+        if(length(unique(unique_p_values$feature)) > num_features || length(unique(unique_p_values$p_value_balanced_accuracy)) == 1){
+          
+          message("\nNot enough unique p-values to select top features informatively. Selecting top features using mean classification accuracy instead.")
+          
+          ResultsTable <- classifierOutputs %>%
+            dplyr::slice_max(.data$balanced_accuracy, n = num_features)
+          
+        } else{
+          
+          message("\nSelecting top features using p-value.")
+          
+          ResultsTable <- classifierOutputs %>%
+            dplyr::slice_min(.data$p_value_balanced_accuracy, n = num_features)
+        }
+        
+      } else{
+        
+        unique_p_values <- classifierOutputs %>%
+          dplyr::slice_min(.data$p_value_accuracy, n = num_features)
+        
+        if(length(unique(unique_p_values$feature)) > num_features || length(unique(unique_p_values$p_value_accuracy)) == 1){
+          
+          message("\nNot enough unique p-values to select top features informatively. Selecting top features using mean classification accuracy instead.")
+          
+          ResultsTable <- classifierOutputs %>%
+            dplyr::slice_max(.data$accuracy, n = num_features)
+          
+        } else{
+          
+          message("\nSelecting top features using p-value.")
+          
+          ResultsTable <- classifierOutputs %>%
+            dplyr::slice_min(.data$p_value_accuracy, n = num_features)
+        }
+      }
+    }
+  }
   
   # Filter original data to just the top performers
   
   dataFiltered <- data_id %>%
-    dplyr::mutate(names = paste0(method, "_", names)) %>%
-    dplyr::select(-c(method)) %>%
+    dplyr::mutate(names = paste0(.data$method, "_", .data$names)) %>%
+    dplyr::select(-c(.data$method)) %>%
     tidyr::pivot_wider(id_cols = c("id", "group"), names_from = "names", values_from = "values") %>%
     janitor::clean_names() %>%
     tidyr::pivot_longer(cols = !c("id", "group"), names_to = "names", values_to = "values") %>%
-    dplyr::filter(names %in% ResultsTable$feature)
+    dplyr::filter(.data$names %in% ResultsTable$feature)
   
   #-----------------------
   # Feature x feature plot

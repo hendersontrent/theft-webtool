@@ -182,10 +182,12 @@ shinyServer <- function(input, output, session) {
         
         if(!str_detect(input$input_group_var, " ")){
         featureMatrix <- calculate_features(tmp2, id_var = "id", time_var = "timepoint", 
-                                            values_var = "values", group_var = "group", feature_set = input$feature_set)
+                                            values_var = "values", group_var = "group", feature_set = input$feature_set,
+                                            seed = 123)
         } else{
           featureMatrix <- calculate_features(tmp2, id_var = "id", time_var = "timepoint", 
-                                              values_var = "values", feature_set = input$feature_set)
+                                              values_var = "values", feature_set = input$feature_set,
+                                              seed = 123)
         }
         return(featureMatrix)
       }
@@ -209,16 +211,19 @@ shinyServer <- function(input, output, session) {
         if(!str_detect(input$input_group_var_multi, " ")){
         
         featureMatrix <- calculate_features(tmp(), id_var = "id", time_var = "timepoint", 
-                                            values_var = "values", group_var = "group", feature_set = input$feature_set)
+                                            values_var = "values", group_var = "group", feature_set = input$feature_set,
+                                            seed = 123)
         } else{
           featureMatrix <- calculate_features(tmp(), id_var = "id", time_var = "timepoint", 
-                                              values_var = "values", feature_set = input$feature_set)
+                                              values_var = "values", feature_set = input$feature_set,
+                                              seed = 123)
         }
         return(featureMatrix)
       }
     } else if (!is.null(input$userUpload3) && is.null(input$userUpload2Meta) && is.null(input$userUpload) && is.null(input$userUpload2)){
       featureMatrix <- calculate_features(tmp(), id_var = "id", time_var = "timepoint", 
-                                          values_var = "values", group_var = "group", feature_set = input$feature_set)
+                                          values_var = "values", group_var = "group", feature_set = input$feature_set,
+                                          seed = 123)
       
       return(featureMatrix)
     } else{

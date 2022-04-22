@@ -9,22 +9,22 @@ calc_catch22 <- function(data, catch24){
   if("group" %in% colnames(data)){
     outData <- data %>%
       tibble::as_tibble() %>%
-      dplyr::group_by(id, group) %>%
-      dplyr::arrange(timepoint) %>%
-      dplyr::summarise(Rcatch22::catch22_all(values, catch24 = catch24)) %>%
+      dplyr::group_by(.data$id, .data$group) %>%
+      dplyr::arrange(.data$timepoint) %>%
+      dplyr::summarise(Rcatch22::catch22_all(.data$values, catch24 = catch24)) %>%
       dplyr::ungroup() %>%
       dplyr::mutate(method = "catch22")
   } else{
     outData <- data %>%
       tibble::as_tibble() %>%
-      dplyr::group_by(id) %>%
-      dplyr::arrange(timepoint) %>%
-      dplyr::summarise(Rcatch22::catch22_all(values, catch24 = catch24)) %>%
+      dplyr::group_by(.data$id) %>%
+      dplyr::arrange(.data$timepoint) %>%
+      dplyr::summarise(Rcatch22::catch22_all(.data$values, catch24 = catch24)) %>%
       dplyr::ungroup() %>%
       dplyr::mutate(method = "catch22")
   }
   
-  message("Calculations completed for catch22.")
+  message("\nCalculations completed for catch22.")
   return(outData)
 }
 
@@ -35,22 +35,22 @@ calc_catch22 <- function(data, catch24){
 calc_feasts <- function(data){
   
   if("group" %in% colnames(data)){
-    tsData <- tsibble::as_tsibble(data, key = c(id, group), index = timepoint)
+    tsData <- tsibble::as_tsibble(data, key = c(.data$id, .data$group), index = .data$timepoint)
     
     outData <- tsData %>%
-      fabletools::features(values, fabletools::feature_set(pkgs = "feasts"))  %>%
-      tidyr::gather("names", "values", -c(id, group)) %>%
+      fabletools::features(.data$values, fabletools::feature_set(pkgs = "feasts"))  %>%
+      tidyr::gather("names", "values", -c(.data$id, .data$group)) %>%
       dplyr::mutate(method = "feasts")
   } else{
-    tsData <- tsibble::as_tsibble(data, key = c(id), index = timepoint)
+    tsData <- tsibble::as_tsibble(data, key = c(.data$id), index = .data$timepoint)
     
     outData <- tsData %>%
-      fabletools::features(values, fabletools::feature_set(pkgs = "feasts"))  %>%
-      tidyr::gather("names", "values", -id) %>%
+      fabletools::features(.data$values, fabletools::feature_set(pkgs = "feasts"))  %>%
+      tidyr::gather("names", "values", -.data$id) %>%
       dplyr::mutate(method = "feasts")
   }
   
-  message("Calculations completed for feasts.")
+  message("\nCalculations completed for feasts.")
   return(outData)
 }
 
@@ -69,15 +69,15 @@ tsfeatures_helper <- function(data, grouped = FALSE, feats){
   outData <- data %>%
     tibble::as_tibble() %>%
     dplyr::group_by_at(dplyr::all_of(vars)) %>%
-    dplyr::arrange(timepoint) %>%
-    dplyr::select(-c(timepoint)) %>%
-    dplyr::summarise(values = list(values)) %>%
+    dplyr::arrange(.data$timepoint) %>%
+    dplyr::select(-c(.data$timepoint)) %>%
+    dplyr::summarise(values = list(.data$values)) %>%
     dplyr::group_by_at(dplyr::all_of(vars)) %>%
-    dplyr::summarise(tsfeatures::tsfeatures(values, features = feats)) %>%
+    dplyr::summarise(tsfeatures::tsfeatures(.data$values, features = feats)) %>%
     dplyr::ungroup() %>%
-    tidyr::gather("names", "values", -c(vars)) %>%
+    tidyr::gather("names", "values", -c(dplyr::all_of(vars))) %>%
     dplyr::mutate(method = "tsfeatures")
-
+  
   return(outData)
 }
 
@@ -113,7 +113,7 @@ calc_tsfeatures <- function(data){
     }
   }
   
-  message("Calculations completed for tsfeatures.")
+  message("\nCalculations completed for tsfeatures.")
   return(outData)
 }
 
@@ -125,13 +125,14 @@ calc_tsfresh <- function(data, column_id = "id", column_sort = "timepoint", clea
   
   if("group" %in% colnames(data)){
     groups <- data %>%
-      dplyr::select(c(id, group)) %>%
+      dplyr::select(c(.data$id, .data$group)) %>%
       dplyr::distinct()
   } else{
   }
   
   # Load Python function
   
+  tsfresh_calculator <- function(){}
   reticulate::source_python(system.file("python", "tsfresh_calculator.py", package = "theft")) # Ships with package
   
   # Convert time index column to numeric to avoid {tsfresh} errors
@@ -144,8 +145,8 @@ calc_tsfresh <- function(data, column_id = "id", column_sort = "timepoint", clea
     temp <- data %>%
       dplyr::rename(old_id = id) %>%
       dplyr::left_join(ids, by = c("old_id" = "old_id")) %>%
-      dplyr::group_by(id) %>%
-      dplyr::arrange(timepoint) %>%
+      dplyr::group_by(.data$id) %>%
+      dplyr::arrange(.data$timepoint) %>%
       dplyr::mutate(timepoint = as.numeric(dplyr::row_number())) %>%
       dplyr::ungroup()
     
@@ -158,12 +159,12 @@ calc_tsfresh <- function(data, column_id = "id", column_sort = "timepoint", clea
     # Compute features and re-join back correct id labels
     
     ids2 <- ids %>%
-      dplyr::select(-c(id)) %>%
-      dplyr::rename(id = old_id)
+      dplyr::select(-c(.data$id)) %>%
+      dplyr::rename(id = .data$old_id)
     
     outData <- tsfresh_calculator(timeseries = temp1, column_id = column_id, column_sort = column_sort, cleanup = cleanup) %>%
       cbind(ids2) %>%
-      tidyr::gather("names", "values", -id) %>%
+      tidyr::gather("names", "values", -.data$id) %>%
       dplyr::mutate(method = "tsfresh")
     
   } else{
@@ -177,7 +178,7 @@ calc_tsfresh <- function(data, column_id = "id", column_sort = "timepoint", clea
     
     outData <- tsfresh_calculator(timeseries = temp1, column_id = column_id, column_sort = column_sort, cleanup = cleanup) %>%
       dplyr::mutate(id = ids) %>%
-      tidyr::gather("names", "values", -id) %>%
+      tidyr::gather("names", "values", -.data$id) %>%
       dplyr::mutate(method = "tsfresh")
   }
   
@@ -187,7 +188,7 @@ calc_tsfresh <- function(data, column_id = "id", column_sort = "timepoint", clea
   } else{
   }
   
-  message("Calculations completed for tsfresh.")
+  message("\nCalculations completed for tsfresh.")
   return(outData)
 }
 
@@ -199,29 +200,30 @@ calc_tsfel <- function(data){
   
   # Load Python function
   
+  tsfel_calculator <- function(){}
   reticulate::source_python(system.file("python", "tsfel_calculator.py", package = "theft")) # Ships with package
   
   if("group" %in% colnames(data)){
     outData <- data %>%
       tibble::as_tibble() %>%
-      dplyr::group_by(id, group) %>%
-      dplyr::arrange(timepoint) %>%
-      dplyr::summarise(tsfel_calculator(values)) %>%
+      dplyr::group_by(.data$id, .data$group) %>%
+      dplyr::arrange(.data$timepoint) %>%
+      dplyr::summarise(tsfel_calculator(.data$values)) %>%
       dplyr::ungroup() %>%
-      tidyr::gather("names", "values", -c(id, group)) %>%
+      tidyr::gather("names", "values", -c(.data$id, .data$group)) %>%
       dplyr::mutate(method = "TSFEL")
   } else{
     outData <- data %>%
       tibble::as_tibble() %>%
-      dplyr::group_by(id) %>%
-      dplyr::arrange(timepoint) %>%
-      dplyr::summarise(tsfel_calculator(values)) %>%
+      dplyr::group_by(.data$id) %>%
+      dplyr::arrange(.data$timepoint) %>%
+      dplyr::summarise(tsfel_calculator(.data$values)) %>%
       dplyr::ungroup() %>%
-      tidyr::gather("names", "values", -c(id)) %>%
+      tidyr::gather("names", "values", -c(.data$id)) %>%
       dplyr::mutate(method = "TSFEL")
   }
   
-  message("Calculations completed for TSFEL.")
+  message("\nCalculations completed for TSFEL.")
   return(outData)
 }
 
@@ -233,6 +235,7 @@ calc_kats <- function(data){
   
   # Load Python function
   
+  kats_calculator <- function(){}
   reticulate::source_python(system.file("python", "kats_calculator.py", package = "theft")) # Ships with package
   
   # Convert numeric time index to datetime as Kats requires it
@@ -247,36 +250,36 @@ calc_kats <- function(data){
   if("group" %in% colnames(data)){
     outData <- data %>%
       dplyr::left_join(datetimes, by = c("timepoint" = "timepoint")) %>%
-      dplyr::select(-c(timepoint)) %>%
-      dplyr::group_by(id, group) %>%
-      dplyr::arrange(time) %>%
-      dplyr::summarise(results = list(kats_calculator(timepoints = time, values = values))) %>%
-      tidyr::unnest_wider(results) %>%
+      dplyr::select(-c(.data$timepoint)) %>%
+      dplyr::group_by(.data$id, .data$group) %>%
+      dplyr::arrange(.data$time) %>%
+      dplyr::summarise(results = list(kats_calculator(timepoints = .data$time, values = .data$values))) %>%
+      tidyr::unnest_wider(.data$results) %>%
       dplyr::ungroup() %>%
-      tidyr::gather("names", "values", -c(id, group)) %>%
+      tidyr::gather("names", "values", -c(.data$id, .data$group)) %>%
       dplyr::mutate(method = "Kats")
   } else{
     outData <- data %>%
       dplyr::left_join(datetimes, by = c("timepoint" = "timepoint")) %>%
-      dplyr::select(-c(timepoint)) %>%
-      dplyr::group_by(id) %>%
-      dplyr::arrange(time) %>%
-      dplyr::summarise(results = list(kats_calculator(timepoints = time, values = values))) %>%
-      tidyr::unnest_wider(results) %>%
+      dplyr::select(-c(.data$timepoint)) %>%
+      dplyr::group_by(.data$id) %>%
+      dplyr::arrange(.data$time) %>%
+      dplyr::summarise(results = list(kats_calculator(timepoints = .data$time, values = .data$values))) %>%
+      tidyr::unnest_wider(.data$results) %>%
       dplyr::ungroup() %>%
-      tidyr::gather("names", "values", -c(id)) %>%
+      tidyr::gather("names", "values", -c(.data$id)) %>%
       dplyr::mutate(method = "Kats")
   }
   
-  message("Calculations completed for Kats.")
+  message("\nCalculations completed for Kats.")
   return(outData)
 }
 
 #------------------- Main exported calculation function ------------
 
 #' Compute features on an input time series dataset
+#' @importFrom rlang .data
 #' @import dplyr
-#' @importFrom magrittr %>%
 #' @importFrom tibble as_tibble
 #' @importFrom tidyr gather
 #' @importFrom tidyr pivot_longer
@@ -286,7 +289,6 @@ calc_kats <- function(data){
 #' @importFrom tsfeatures lumpiness stability max_level_shift max_var_shift max_kl_shift crossing_points flat_spots hurst compengine autocorr_features pred_features station_features dist_features scal_features embed2_incircle firstzero_ac ac_9 firstmin_ac trev_num motiftwo_entro3 binarize_mean walker_propcross localsimple_taures sampen_first sampenc std1st_der spreadrandomlocal_meantaul histogram_mode outlierinclude_mdrmd fluctanal_prop_r1 entropy tsfeatures stl_features acf_features pacf_features holt_parameters hw_parameters heterogeneity nonlinearity arch_stat
 #' @import feasts
 #' @import reticulate
-#' @importFrom data.table rbindlist
 #' @importFrom fabletools features
 #' @importFrom fabletools feature_set
 #' @param data a dataframe with at least 4 columns: id variable, group variable, time variable, value variable
@@ -297,23 +299,23 @@ calc_kats <- function(data){
 #' @param feature_set the set of time-series features to calculate. Defaults to \code{catch22}
 #' @param catch24 a Boolean specifying whether to compute \code{catch24} in addition to \code{catch22} if \code{catch22} is one of the feature sets selected. Defaults to \code{FALSE}
 #' @param tsfresh_cleanup a Boolean specifying whether to use the in-built \code{tsfresh} relevant feature filter or not. Defaults to \code{FALSE}
+#' @param seed fixed number for R's random number generator to ensure reproducibility
 #' @return object of class dataframe that contains the summary statistics for each feature
 #' @author Trent Henderson
 #' @export
 #' @examples
-#' \dontrun{
 #' featMat <- calculate_features(data = simData, 
 #'   id_var = "id", 
 #'   time_var = "timepoint", 
 #'   values_var = "values", 
 #'   group_var = "process", 
-#'   feature_set = "catch22")
-#' }
+#'   feature_set = "catch22",
+#'   seed = 123)
 #'
 
 calculate_features <- function(data, id_var = NULL, time_var = NULL, values_var = NULL, group_var = NULL,
                                feature_set = c("catch22", "feasts", "tsfeatures", "kats", "tsfresh", "tsfel"), 
-                               catch24 = FALSE, tsfresh_cleanup = FALSE){
+                               catch24 = FALSE, tsfresh_cleanup = FALSE, seed = 123){
   
   if(is.null(id_var) || is.null(time_var) || is.null(values_var)){
     stop("Input must be a dataframe with at least 3 columns: id, timepoint, value")
@@ -331,15 +333,26 @@ calculate_features <- function(data, id_var = NULL, time_var = NULL, values_var 
     message("No feature set entered. Running catch22 by default.")
   }
   
+  # Seed
+  
+  if(is.null(seed) || missing(seed)){
+    seed <- 123
+    message("No argument supplied to seed, using 123 as default.")
+  }
+  
   #--------- Error catches ---------
   
+  #-----------------
   # Method selection
+  #-----------------
+  
+  # Check incorrect specifications
   
   the_sets <- c("catch22", "feasts", "tsfeatures", "kats", "tsfresh", "tsfel")
   '%ni%' <- Negate('%in%')
   
-  if(feature_set %ni% the_sets){
-    stop("feature_set should be a single string selection or vector combination of 'catch22', 'feasts', 'tsfeatures', 'kats', 'tsfresh' or 'tsfel'.")
+  if(length(base::setdiff(feature_set, the_sets)) != 0){
+    stop("feature_set should be a single string specification or vector of 'catch22', 'feasts', 'tsfeatures', 'kats', 'tsfresh' or 'tsfel'.")
   }
   
   if(!is.null(group_var) && !is.character(group_var)){
@@ -356,28 +369,28 @@ calculate_features <- function(data, id_var = NULL, time_var = NULL, values_var 
   if(!is.null(group_var)){
     data_re <- data_re %>%
       dplyr::rename(group = dplyr::all_of(group_var)) %>%
-      dplyr::select(c(id, timepoint, values, group))
+      dplyr::select(c(.data$id, .data$timepoint, .data$values, .data$group))
   } else{
     data_re <- data_re %>%
-      dplyr::select(c(id, timepoint, values))
+      dplyr::select(c(.data$id, .data$timepoint, .data$values))
   }
   
   quality_check <- data_re %>%
-    dplyr::group_by(id) %>%
-    dplyr::summarise(good_or_not = check_vector_quality(values)) %>%
+    dplyr::group_by(.data$id) %>%
+    dplyr::summarise(good_or_not = check_vector_quality(.data$values)) %>%
     dplyr::ungroup()
   
   good_ids <- quality_check %>%
-    dplyr::filter(good_or_not == TRUE)
+    dplyr::filter(.data$good_or_not == TRUE)
   
   bad_ids <- quality_check %>%
-    dplyr::filter(good_or_not == FALSE)
+    dplyr::filter(.data$good_or_not == FALSE)
   
   bad_list <- bad_ids$id
   
   if(length(bad_list) > 0){
     for(b in bad_list){
-      print(paste0("Removed ID: ", b, " due to non-real values."))
+      message(paste0("Removed ID: ", b, " due to non-real values."))
     }
     message(paste0("Total IDs removed due to non-real values: ", bad_ids$id, " (", round(nrow(bad_ids) / (nrow(good_ids) + nrow(bad_ids)), digits = 2)*100, "%)"))
   } else{
@@ -385,7 +398,7 @@ calculate_features <- function(data, id_var = NULL, time_var = NULL, values_var 
   }
   
   data_re <- data_re %>%
-    dplyr::filter(id %in% good_ids$id)
+    dplyr::filter(.data$id %in% good_ids$id)
   
   if(nrow(data_re) == 0){
     stop("No IDs remaining to calculate features after removing IDs with non-real values.")
@@ -413,13 +426,11 @@ calculate_features <- function(data, id_var = NULL, time_var = NULL, values_var 
   
   if("tsfresh" %in% feature_set){
     
-    message("'tsfresh' requires a Python installation and the 'tsfresh' Python package to also be installed. Please ensure you have this working (see https://tsfresh.com for more information). You can specify which Python to use by running one of the following in your R console/script prior to calling calculate_features(): use_python = 'path_to_your_python_as_a_string_here' or use_virtualenv = 'name_of_your_virtualenv_here'")
+    message("'tsfresh' requires a Python installation and the 'tsfresh' Python package to also be installed. Please ensure you have this working (see https://tsfresh.com for more information). You can specify which Python to use by running one of the following in your R console/script prior to calling calculate_features(): theft::init_theft(path_to_python) where path_to_python is a string specifying the location of Python with the installed libraries on your machine.")
     
-    if(tsfresh_cleanup == TRUE){
+    if(tsfresh_cleanup){
       cleanuper <- "Yes"
-    }
-    
-    if(tsfresh_cleanup == FALSE){
+    } else{
       cleanuper <- "No"
     }
     
@@ -429,14 +440,14 @@ calculate_features <- function(data, id_var = NULL, time_var = NULL, values_var 
   
   if("tsfel" %in% feature_set){
     
-    message("'tsfel' requires a Python installation and the 'tsfel' Python package to also be installed. Please ensure you have this working (see https://tsfel.readthedocs.io/en/latest/ for more information). You can specify which Python to use by running one of the following in your R console/script prior to calling calculate_features(): use_python = 'path_to_your_python_as_a_string_here' or use_virtualenv = 'name_of_your_virtualenv_here'")
+    message("'tsfel' requires a Python installation and the 'tsfel' Python package to also be installed. Please ensure you have this working (see https://tsfel.readthedocs.io/en/latest/ for more information). You can specify which Python to use by running one of the following in your R console/script prior to calling calculate_features(): theft::init_theft(path_to_python) where path_to_python is a string specifying the location of Python with the installed libraries on your machine.")
     message("\nRunning computations for tsfel...")
     tmp_tsfel <- calc_tsfel(data = data_re)
   }
   
   if("kats" %in% feature_set){
     
-    message("'kats' requires a Python installation and the 'kats' Python package to also be installed. Please ensure you have this working (see https://facebookresearch.github.io/Kats/ for more information). You can specify which Python to use by running one of the following in your R console/script prior to calling calculate_features(): use_python = 'path_to_your_python_as_a_string_here' or use_virtualenv = 'name_of_your_virtualenv_here'")
+    message("'kats' requires a Python installation and the 'kats' Python package to also be installed. Please ensure you have this working (see https://facebookresearch.github.io/Kats/ for more information). You can specify which Python to use by running one of the following in your R console/script prior to calling calculate_features(): theft::init_theft(path_to_python) where path_to_python is a string specifying the location of Python with the installed libraries on your machine.")
     message("\nRunning computations for kats...")
     tmp_kats <- calc_kats(data = data_re)
   }
@@ -446,27 +457,27 @@ calculate_features <- function(data, id_var = NULL, time_var = NULL, values_var 
   if(length(feature_set) > 1){
     message("\nBinding feature dataframes together...")
   }
-    
+  
   if(exists("tmp_catch22")){
     tmp_all_features <- dplyr::bind_rows(tmp_all_features, tmp_catch22)
   }
-    
+  
   if(exists("tmp_feasts")){
     tmp_all_features <- dplyr::bind_rows(tmp_all_features, tmp_feasts)
   }
-    
+  
   if(exists("tmp_tsfeatures")){
     tmp_all_features <- dplyr::bind_rows(tmp_all_features, tmp_tsfeatures)
   }
-    
+  
   if(exists("tmp_tsfresh")){
     tmp_all_features <- dplyr::bind_rows(tmp_all_features, tmp_tsfresh)
   }
-    
+  
   if(exists("tmp_tsfel")){
     tmp_all_features <- dplyr::bind_rows(tmp_all_features, tmp_tsfel)
   }
-    
+  
   if(exists("tmp_kats")){
     tmp_all_features <- dplyr::bind_rows(tmp_all_features, tmp_kats)
   }
