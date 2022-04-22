@@ -472,13 +472,20 @@ shinyServer <- function(input, output, session) {
       use_empirical_null <- FALSE
     }
     
+    if(input$balancedaccSelect == binaries[2]){
+      use_balanced_accuracy <- TRUE
+    } else{
+      use_balanced_accuracy <- FALSE
+    }
+    
     # Fit model(s) and draw graphic
     
-    multivariateOutputList <- fit_multivariate_classifier(featureMatrix(), id_var = "id", group_var = "group",
-                                                       by_set = by_set, test_method = input$classifierSelect,
-                                                       use_k_fold = use_k_fold, num_folds = input$kfoldSlider, 
-                                                       use_empirical_null = use_empirical_null, null_testing_method = input$nullmethodSelect,
-                                                       p_value_method = input$pvaluemethodSelect, num_permutations = input$permutationSlider)
+    multivariateOutputList <- fit_multi_feature_classifier(featureMatrix(), id_var = "id", group_var = "group",
+                                                           by_set = by_set, test_method = input$classifierSelect, use_balanced_accuracy = use_balanced_accuracy,
+                                                           use_k_fold = use_k_fold, num_folds = input$kfoldSlider, 
+                                                           use_empirical_null = use_empirical_null, null_testing_method = input$nullmethodSelect,
+                                                           p_value_method = input$pvaluemethodSelect, num_permutations = input$permutationSlider,
+                                                           seed = 123)
     
     return(multivariateOutputList)
   })
@@ -510,23 +517,51 @@ shinyServer <- function(input, output, session) {
       )
     )
     
-    if(input$empiricalnullSelect == "No"){
+    if(input$empiricalnullSelect == "Yes"){
       
-      multivariateOutputs()$RawClassificationResults %>%
-        filter(method %in% c("catch22", "feasts", "tsfeatures")) %>%
-        dplyr::select(c(method, statistic, classifier_name, statistic_name)) %>%
-        rename(Method = method,
-               `Classification Accuracy` = statistic,
-               `Classifier Name` = classifier_name,
-               `Statistic Name` = statistic_name)
+      if(input$balancedaccSelect == "Yes"){
+        
+        multivariateOutputs()$RawClassificationResults %>%
+          dplyr::filter(category == "Main") %>%
+          dplyr::select(c(method, accuracy, balanced_accuracy, p_value_accuracy, p_value_balanced_accuracy, classifier_name, statistic_name)) %>%
+          rename(Method = method,
+                 `Classification Accuracy` = statistic,
+                 `Classification Accuracy p value` = p_value_accuracy,
+                 `Balanced Classification Accuracy` = balanced_accuracy,
+                 `Balanced Classification Accuracy p value` = p_value_balanced_accuracy,
+                 `Classifier Name` = classifier_name,
+                 `Statistic Name` = statistic_name)
+        
+      } else{
+        
+        multivariateOutputs()$RawClassificationResults %>%
+          dplyr::filter(category == "Main") %>%
+          dplyr::select(c(method, accuracy, classifier_name, statistic_name)) %>%
+          rename(Method = method,
+                 `Classification Accuracy` = accuracy,
+                 `Classifier Name` = classifier_name,
+                 `Statistic Name` = statistic_name)
+      }
       
     } else{
-      multivariateOutputs()$TestStatistics %>%
-        rename(Method = method,
-               `Classification Accuracy` = statistic_value,
-               `p value` = p_value,
-               `Classifier Name` = classifier_name,
-               `Statistic Name` = statistic_name)
+      
+      if(input$balancedaccSelect == "Yes"){
+        
+        multivariateOutputs()$RawClassificationResults %>%
+          rename(Method = method,
+                 `Classification Accuracy` = accuracy,
+                 `Balanced Classification Accuracy` = balanced_accuracy,
+                 `Classifier Name` = classifier_name,
+                 `Statistic Name` = statistic_name)
+        
+      } else{
+        
+        multivariateOutputs()$RawClassificationResults %>%
+          rename(Method = method,
+                 `Classification Accuracy` = accuracy,
+                 `Classifier Name` = classifier_name,
+                 `Statistic Name` = statistic_name)
+      }
     }
   })
   
@@ -565,6 +600,12 @@ shinyServer <- function(input, output, session) {
       pool_empirical_null <- FALSE
     }
     
+    if(input$balancedaccSelect == binaries[2]){
+      use_balanced_accuracy <- TRUE
+    } else{
+      use_balanced_accuracy <- FALSE
+    }
+    
     # Catch cases where user makes an error in the browser to avoid red message
     
     if(input$nullmethodSelect == "model free shuffles" && pool_empirical_null){
@@ -575,11 +616,11 @@ shinyServer <- function(input, output, session) {
     
     univariateOutputList <- compute_top_features(featureMatrix(), id_var = "id", group_var = "group",
                                                  num_features = input$numFeaturesSlider, normalise_violin_plots = FALSE, test_method = input$classifierSelect,
-                                                 method = "z-score", cor_method = input$corMethodUnivariate, 
+                                                 use_balanced_accuracy = use_balanced_accuracy, method = "z-score", cor_method = input$corMethodUnivariate, 
                                                  use_k_fold = use_k_fold, num_folds = input$kfoldSlider,
                                                  use_empirical_null = use_empirical_null, null_testing_method = input$nullmethodSelect,
                                                  p_value_method = input$pvaluemethodSelect, num_permutations = input$permutationSlider, 
-                                                 pool_empirical_null = pool_empirical_null)
+                                                 pool_empirical_null = pool_empirical_null, seed = 123)
     
     return(univariateOutputList)
   })
@@ -627,12 +668,49 @@ shinyServer <- function(input, output, session) {
       )
     )
     
-    univariateOutputs()$ResultsTable %>%
-      rename(Feature = feature,
-             `Classification Accuracy` = statistic_value,
-             `p value` = p_value,
-             `Classifier Name` = classifier_name,
-             `Statistic Name` = statistic_name)
+    if(input$empiricalnullSelect == "Yes"){
+      
+      if(input$balancedaccSelect == "Yes"){
+        
+        univariateOutputs()$ResultsTable %>%
+          rename(Feature = feature,
+                 `Classification Accuracy` = accuracy,
+                 `Classification Accuracy p value` = p_value_accuracy,
+                 `Balanced Classification Accuracy` = balanced_accuracy,
+                 `Balanced Classification Accuracy p value` = p_value_balanced_accuracy,
+                 `Classifier Name` = classifier_name,
+                 `Statistic Name` = statistic_name)
+        
+      } else{
+        
+        univariateOutputs()$ResultsTable %>%
+          rename(Feature = feature,
+                 `Classification Accuracy` = accuracy,
+                 `Classification Accuracy p value` = p_value_accuracy,
+                 `Classifier Name` = classifier_name,
+                 `Statistic Name` = statistic_name)
+      }
+      
+    } else{
+      
+      if(input$balancedaccSelect == "Yes"){
+        
+        univariateOutputs()$ResultsTable %>%
+          rename(Feature = feature,
+                 `Classification Accuracy` = accuracy,
+                 `Balanced Classification Accuracy` = balanced_accuracy,
+                 `Classifier Name` = classifier_name,
+                 `Statistic Name` = statistic_name)
+        
+      } else{
+        
+        univariateOutputs()$ResultsTable %>%
+          rename(Feature = feature,
+                 `Classification Accuracy` = accuracy,
+                 `Classifier Name` = classifier_name,
+                 `Statistic Name` = statistic_name)
+      }
+    }
   })
   
 }

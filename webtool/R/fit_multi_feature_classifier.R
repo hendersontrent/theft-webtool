@@ -900,7 +900,10 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
                       upper = .data$statistic + (2 * .data$statistic_sd))
       
       FeatureSetResultsPlot <- accuracies %>%
-        ggplot2::ggplot(ggplot2::aes(x = stats::reorder(.data$method, -.data$statistic))) +
+        ggplot2::ggplot(ggplot2::aes(x = stats::reorder(.data$method, -.data$statistic), 
+                                     text = paste('<b>Method: </b>', method,
+                                                  paste0('<br><b>Classification accuracy: </b>', 
+                                                         round(statistic, digits = 2), "%")))) +
         ggplot2::geom_bar(ggplot2::aes(y = .data$statistic, fill = .data$method), stat = "identity") +
         ggplot2::geom_errorbar(ggplot2::aes(ymin = .data$lower, ymax = .data$upper), colour = "black")
       
@@ -927,7 +930,10 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
     } else{
       
       FeatureSetResultsPlot <- accuracies %>%
-        ggplot2::ggplot(ggplot2::aes(x = stats::reorder(.data$method, -.data$statistic))) +
+        ggplot2::ggplot(ggplot2::aes(x = stats::reorder(.data$method, -.data$statistic), 
+                                     text = paste('<b>Method: </b>', method, 
+                                                  paste0('<br><b>Classification accuracy: </b>',
+                                                         round(statistic, digits = 2), "%")))) +
         ggplot2::geom_bar(ggplot2::aes(y = .data$statistic, fill = .data$method), stat = "identity") +
         ggplot2::labs(subtitle = "Number of features is indicated in parentheses") +
         ggplot2::scale_y_continuous(limits = c(0, 100),
@@ -958,6 +964,12 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
           ggplot2::facet_wrap(~names)
       }
     }
+    
+    #-------- Convert to interactive graphic --------
+    
+    FeatureSetResultsPlot <- ggplotly(FeatureSetResultsPlot, tooltip = c("text")) %>%
+      layout(legend = list(orientation = "h", x = 0, y = -0.2)) %>%
+      config(displayModeBar = FALSE)
     
     #-----------------
     # Compute p values

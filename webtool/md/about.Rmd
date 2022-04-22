@@ -3,13 +3,13 @@
 
 ### What is this application?
 
-This application automatically takes an input dataset containing multiple time series, processes it, calculates a set of time-series features, and produces a range of interactive visualisations and statistical analyses for the extracted features all within your web browser. If your data contains a class label vector (i.e., group labels), this application also produces automated classification using cross-validated machine learning algorithms with the calculated feature matrices as inputs.
+This application automatically takes an input dataset containing multiple time series, processes it, calculates a set of time-series features, and produces a range of interactive visualisations and statistical analyses for the extracted features all within your web browser. If your data contains a class label vector (i.e., group labels), this application also produces automated time-series classification using a broad range of machine learning algorithms with the calculated feature matrix as an input.
 
-The backbone of the application is the `R` package [`theft`](https://github.com/hendersontrent/theft) - Tools for Handling Extraction of Features from Time-series. This application enables researchers unfamiliar with `R` or code to explore the vast functionality of `theft` and feature-based time-series analysis in general in their web browser. Note that not all of the power of `theft` is currently in this application --- the three Python feature sets (`tsfresh`, `TSFEL`, and `Kats`) which `theft` provides access to are currently not supported yet. Including these feature sets, along with some additional data visualisations and analyses in `theft`, are active areas of development for this application.
+The backbone of the application is the `R` package [`theft`](https://github.com/hendersontrent/theft) - Tools for Handling Extraction of Features from Time series. This application enables researchers unfamiliar with `R` or code to explore the vast functionality of `theft` and feature-based time-series analysis in general in their web browser. Note that not all of the power of `theft` is currently in this application --- the three Python feature sets (`tsfresh`, `TSFEL`, and `Kats`) which `theft` provides access to are currently not supported yet. Including these feature sets is an active area of development for this application.
 
 ### How do I use it?
 
-The application only requires a time-series dataset to be uploaded to get started. Navigate to the homepage and upload your time series dataset. Support for more input formats are being added over time. Please check back soon for more options if you data format is not currently accepted, otherwise, please convert to an accepted format in the meantime.
+The application only requires a time-series dataset to be uploaded to get started. Navigate to the homepage and upload your time series dataset. Support for more input formats are being continuously added. Please check back soon for more options if you data format is not currently accepted, otherwise, please convert to an accepted format in the meantime.
 
 ### Who made it?
 
