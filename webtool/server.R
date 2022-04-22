@@ -517,12 +517,19 @@ shinyServer <- function(input, output, session) {
       )
     )
     
+    theresults <- multivariateOutputs()$RawClassificationResults %>%
+      filter(method %ni% c("model free shuffles", "null model fits"))
+    
+    if(nrow(theresults) == 1 && is.na(theresults$method)){
+      theresults <- theresults %>%
+        mutate(method = "Overall")
+    }
+    
     if(input$empiricalnullSelect == "Yes"){
       
       if(input$balancedaccSelect == "Yes"){
         
-        multivariateOutputs()$RawClassificationResults %>%
-          dplyr::filter(category == "Main") %>%
+        theresults %>%
           dplyr::select(c(method, accuracy, balanced_accuracy, p_value_accuracy, p_value_balanced_accuracy, classifier_name, statistic_name)) %>%
           rename(Method = method,
                  `Classification Accuracy` = statistic,
@@ -534,11 +541,11 @@ shinyServer <- function(input, output, session) {
         
       } else{
         
-        multivariateOutputs()$RawClassificationResults %>%
-          dplyr::filter(category == "Main") %>%
-          dplyr::select(c(method, accuracy, classifier_name, statistic_name)) %>%
+        theresults %>%
+          dplyr::select(c(method, accuracy, p_value_accuracy, classifier_name, statistic_name)) %>%
           rename(Method = method,
                  `Classification Accuracy` = accuracy,
+                 `Classification Accuracy p value` = p_value_accuracy,
                  `Classifier Name` = classifier_name,
                  `Statistic Name` = statistic_name)
       }
@@ -547,7 +554,8 @@ shinyServer <- function(input, output, session) {
       
       if(input$balancedaccSelect == "Yes"){
         
-        multivariateOutputs()$RawClassificationResults %>%
+        theresults %>%
+          dplyr::select(c(method, accuracy, balanced_accuracy, classifier_name, statistic_name)) %>%
           rename(Method = method,
                  `Classification Accuracy` = accuracy,
                  `Balanced Classification Accuracy` = balanced_accuracy,
@@ -556,7 +564,8 @@ shinyServer <- function(input, output, session) {
         
       } else{
         
-        multivariateOutputs()$RawClassificationResults %>%
+        theresults %>%
+          dplyr::select(c(method, accuracy, classifier_name, statistic_name)) %>%
           rename(Method = method,
                  `Classification Accuracy` = accuracy,
                  `Classifier Name` = classifier_name,
@@ -673,6 +682,7 @@ shinyServer <- function(input, output, session) {
       if(input$balancedaccSelect == "Yes"){
         
         univariateOutputs()$ResultsTable %>%
+          dplyr::select(c(feature, accuracy, balanced_accuracy, p_value_accuracy, p_value_balanced_accuracy, classifier_name, statistic_name)) %>%
           rename(Feature = feature,
                  `Classification Accuracy` = accuracy,
                  `Classification Accuracy p value` = p_value_accuracy,
@@ -684,6 +694,7 @@ shinyServer <- function(input, output, session) {
       } else{
         
         univariateOutputs()$ResultsTable %>%
+          dplyr::select(c(feature, accuracy, p_value_accuracy, classifier_name, statistic_name)) %>%
           rename(Feature = feature,
                  `Classification Accuracy` = accuracy,
                  `Classification Accuracy p value` = p_value_accuracy,
@@ -696,6 +707,7 @@ shinyServer <- function(input, output, session) {
       if(input$balancedaccSelect == "Yes"){
         
         univariateOutputs()$ResultsTable %>%
+          dplyr::select(c(feature, accuracy, balanced_accuracy, classifier_name, statistic_name)) %>%
           rename(Feature = feature,
                  `Classification Accuracy` = accuracy,
                  `Balanced Classification Accuracy` = balanced_accuracy,
@@ -705,6 +717,7 @@ shinyServer <- function(input, output, session) {
       } else{
         
         univariateOutputs()$ResultsTable %>%
+          dplyr::select(c(feature, accuracy, classifier_name, statistic_name)) %>%
           rename(Feature = feature,
                  `Classification Accuracy` = accuracy,
                  `Classifier Name` = classifier_name,

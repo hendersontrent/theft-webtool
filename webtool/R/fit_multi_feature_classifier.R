@@ -1002,6 +1002,137 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
     }
   } else{
     
+    #--------------
+    # Draw bar plot
+    #--------------
+    
+    # Wrangle data into tidy format to facet
+    
+    if(use_balanced_accuracy){
+      
+      if(use_k_fold){
+        
+        means <- output %>%
+          dplyr::filter(.data$category == "Main") %>%
+          mutate(method = "All Features") %>%
+          dplyr::select(c(.data$accuracy, .data$balanced_accuracy, .data$category, .data$method, .data$num_features_used)) %>%
+          tidyr::pivot_longer(cols = c("accuracy", "balanced_accuracy"), names_to = "names", values_to = "statistic")
+        
+        sds <- output %>%
+          dplyr::filter(.data$category == "Main") %>% 
+          mutate(method = "All Features") %>%
+          dplyr::select(c(.data$accuracy_sd, .data$balanced_accuracy_sd, .data$category, .data$method, .data$num_features_used)) %>%
+          tidyr::pivot_longer(cols = c("accuracy_sd", "balanced_accuracy_sd"), names_to = "names", values_to = "statistic_sd") %>%
+          dplyr::mutate(names = gsub("_sd", "\\1", .data$names))
+        
+        stopifnot(nrow(means) == nrow(sds))
+        
+        accuracies <- means %>%
+          dplyr::inner_join(sds, by = c("method" = "method", "category" = "category", "num_features_used" = "num_features_used", "names" = "names")) %>%
+          dplyr::mutate(names = ifelse(.data$names == "accuracy", "Accuracy", "Balanced Accuracy"))
+        
+      } else{
+        
+        accuracies <- output %>%
+          dplyr::filter(.data$category == "Main") %>%
+          mutate(method = "All Features") %>%
+          dplyr::select(c(.data$accuracy, .data$balanced_accuracy, .data$category, .data$method, .data$num_features_used)) %>%
+          tidyr::pivot_longer(cols = c("accuracy", "balanced_accuracy"), names_to = "names", values_to = "statistic") %>%
+          dplyr::mutate(names = ifelse(.data$names == "accuracy", "Accuracy", "Balanced Accuracy"))
+      }
+    } else{
+      
+      if(use_k_fold){
+        
+        accuracies <- output %>%
+          dplyr::filter(.data$category == "Main") %>%
+          mutate(method = "All Features") %>%
+          dplyr::rename(statistic = .data$accuracy,
+                        statistic_sd = .data$accuracy_sd) 
+      } else{
+        
+        accuracies <- output %>%
+          dplyr::filter(.data$category == "Main") %>%
+          mutate(method = "All Features") %>%
+          dplyr::rename(statistic = .data$accuracy) 
+      }
+    }
+    
+    # Draw plot
+    
+    accuracies <- accuracies %>%
+      dplyr::mutate(statistic = .data$statistic * 100)
+    
+    if(use_k_fold){
+      
+      accuracies <- accuracies %>%
+        mutate(statistic_sd = .data$statistic_sd * 100) %>%
+        dplyr::mutate(lower = .data$statistic - (2 * .data$statistic_sd),
+                      upper = .data$statistic + (2 * .data$statistic_sd))
+      
+      FeatureSetResultsPlot <- accuracies %>%
+        ggplot2::ggplot(ggplot2::aes(x = stats::reorder(.data$method, -.data$statistic),
+                                     text = paste('<b>Method: </b>', method, 
+                                                  paste0('<br><b>Classification accuracy: </b>',
+                                                         round(statistic, digits = 2), "%")))) +
+        ggplot2::geom_bar(ggplot2::aes(y = .data$statistic, fill = .data$method), stat = "identity") +
+        ggplot2::geom_errorbar(ggplot2::aes(ymin = .data$lower, ymax = .data$upper), colour = "black")
+      
+      # Expand y axis if max (mean + (2*SD)) is > 100%
+      
+      if(max(accuracies$upper, na.rm = TRUE) >= 100){
+        
+        FeatureSetResultsPlot <- FeatureSetResultsPlot +
+          ggplot2::scale_y_continuous(limits = c(0, 100),
+                                      breaks = seq(from = 0, to = 120, by = 20),
+                                      labels = function(x) paste0(x, "%"))
+        
+      } else{
+        
+        FeatureSetResultsPlot <- FeatureSetResultsPlot +
+          ggplot2::scale_y_continuous(limits = c(0, 100),
+                                      breaks = seq(from = 0, to = 100, by = 20),
+                                      labels = function(x) paste0(x, "%"))
+      }
+      
+      FeatureSetResultsPlot <- FeatureSetResultsPlot +
+        ggplot2::labs(subtitle = "Error bars are +- 2 times SD")
+      
+    } else{
+      
+      FeatureSetResultsPlot <- accuracies %>%
+        ggplot2::ggplot(ggplot2::aes(x = stats::reorder(.data$method, -.data$statistic),
+                                     text = paste('<b>Method: </b>', method, 
+                                                  paste0('<br><b>Classification accuracy: </b>',
+                                                         round(statistic, digits = 2), "%")))) +
+        ggplot2::geom_bar(ggplot2::aes(y = .data$statistic, fill = .data$method), stat = "identity") +
+        ggplot2::scale_y_continuous(limits = c(0, 100),
+                                    breaks = seq(from = 0, to = 100, by = 20),
+                                    labels = function(x) paste0(x, "%"))
+    }
+    
+    FeatureSetResultsPlot <- FeatureSetResultsPlot +
+      ggplot2::labs(title = "Classification accuracy by feature set",
+                    y = "Classification accuracy (%)",
+                    x = "Feature set",
+                    fill = NULL) +
+      ggplot2::theme_bw() +
+      ggplot2::scale_fill_brewer(palette = "Dark2") +
+      ggplot2::theme(panel.grid.minor = ggplot2::element_blank(),
+                     legend.position = "none",
+                     axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
+    
+    if(use_balanced_accuracy){
+      FeatureSetResultsPlot <- FeatureSetResultsPlot +
+          ggplot2::facet_wrap(~names)
+    }
+    
+    #-------- Convert to interactive graphic --------
+    
+    FeatureSetResultsPlot <- ggplotly(FeatureSetResultsPlot, tooltip = c("text")) %>%
+      layout(legend = list(orientation = "h", x = 0, y = -0.2)) %>%
+      config(displayModeBar = FALSE)
+    
     if(use_empirical_null){
       
       TestStatistics <- calculate_multivariable_statistics(data = output, set = NULL, p_value_method = p_value_method,
@@ -1013,8 +1144,8 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
         dplyr::mutate(classifier_name = classifier_name,
                       statistic_name = statistic_name)
       
-      myList <- list(TestStatistics, output)
-      names(myList) <- c("TestStatistics", "RawClassificationResults")
+      myList <- list(FeatureSetResultsPlot, TestStatistics, output)
+      names(myList) <- c("FeatureSetResultsPlot", "TestStatistics", "RawClassificationResults")
       
     } else{
       
@@ -1023,8 +1154,8 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
                       statistic_name = statistic_name) %>%
         dplyr::select(-c(.data$category))
       
-      myList <- list(output)
-      names(myList) <- c("RawClassificationResults")
+      myList <- list(FeatureSetResultsPlot, output)
+      names(myList) <- c("FeatureSetResultsPlot", "RawClassificationResults")
     }
   }
   return(myList)

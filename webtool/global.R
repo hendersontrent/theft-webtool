@@ -74,6 +74,10 @@ navtab5 <- "ABOUT"
 
 options(scipen = 999)
 
+# Define "not in" operator
+
+"%ni%" <- Negate("%in%")
+
 # Helper vectors
 
 all_scalers <- c("z-score", "Sigmoid", "RobustSigmoid", "MinMax")
