@@ -182,10 +182,12 @@ shinyServer <- function(input, output, session) {
         
         if(!str_detect(input$input_group_var, " ")){
         featureMatrix <- calculate_features(tmp2, id_var = "id", time_var = "timepoint", 
-                                            values_var = "values", group_var = "group", feature_set = input$feature_set)
+                                            values_var = "values", group_var = "group", feature_set = input$feature_set,
+                                            seed = 123)
         } else{
           featureMatrix <- calculate_features(tmp2, id_var = "id", time_var = "timepoint", 
-                                              values_var = "values", feature_set = input$feature_set)
+                                              values_var = "values", feature_set = input$feature_set,
+                                              seed = 123)
         }
         return(featureMatrix)
       }
@@ -209,16 +211,19 @@ shinyServer <- function(input, output, session) {
         if(!str_detect(input$input_group_var_multi, " ")){
         
         featureMatrix <- calculate_features(tmp(), id_var = "id", time_var = "timepoint", 
-                                            values_var = "values", group_var = "group", feature_set = input$feature_set)
+                                            values_var = "values", group_var = "group", feature_set = input$feature_set,
+                                            seed = 123)
         } else{
           featureMatrix <- calculate_features(tmp(), id_var = "id", time_var = "timepoint", 
-                                              values_var = "values", feature_set = input$feature_set)
+                                              values_var = "values", feature_set = input$feature_set,
+                                              seed = 123)
         }
         return(featureMatrix)
       }
     } else if (!is.null(input$userUpload3) && is.null(input$userUpload2Meta) && is.null(input$userUpload) && is.null(input$userUpload2)){
       featureMatrix <- calculate_features(tmp(), id_var = "id", time_var = "timepoint", 
-                                          values_var = "values", group_var = "group", feature_set = input$feature_set)
+                                          values_var = "values", group_var = "group", feature_set = input$feature_set,
+                                          seed = 123)
       
       return(featureMatrix)
     } else{
@@ -467,13 +472,20 @@ shinyServer <- function(input, output, session) {
       use_empirical_null <- FALSE
     }
     
+    if(input$balancedaccSelect == binaries[2]){
+      use_balanced_accuracy <- TRUE
+    } else{
+      use_balanced_accuracy <- FALSE
+    }
+    
     # Fit model(s) and draw graphic
     
-    multivariateOutputList <- fit_multivariate_classifier(featureMatrix(), id_var = "id", group_var = "group",
-                                                       by_set = by_set, test_method = input$classifierSelect,
-                                                       use_k_fold = use_k_fold, num_folds = input$kfoldSlider, 
-                                                       use_empirical_null = use_empirical_null, null_testing_method = input$nullmethodSelect,
-                                                       p_value_method = input$pvaluemethodSelect, num_permutations = input$permutationSlider)
+    multivariateOutputList <- fit_multi_feature_classifier(featureMatrix(), id_var = "id", group_var = "group",
+                                                           by_set = by_set, test_method = input$classifierSelect, use_balanced_accuracy = use_balanced_accuracy,
+                                                           use_k_fold = use_k_fold, num_folds = input$kfoldSlider, 
+                                                           use_empirical_null = use_empirical_null, null_testing_method = input$nullmethodSelect,
+                                                           p_value_method = input$pvaluemethodSelect, num_permutations = input$permutationSlider,
+                                                           seed = 123)
     
     return(multivariateOutputList)
   })
@@ -505,23 +517,60 @@ shinyServer <- function(input, output, session) {
       )
     )
     
-    if(input$empiricalnullSelect == "No"){
+    theresults <- multivariateOutputs()$RawClassificationResults %>%
+      filter(method %ni% c("model free shuffles", "null model fits"))
+    
+    if(nrow(theresults) == 1 && is.na(theresults$method)){
+      theresults <- theresults %>%
+        mutate(method = "Overall")
+    }
+    
+    if(input$empiricalnullSelect == "Yes"){
       
-      multivariateOutputs()$RawClassificationResults %>%
-        filter(method %in% c("catch22", "feasts", "tsfeatures")) %>%
-        dplyr::select(c(method, statistic, classifier_name, statistic_name)) %>%
-        rename(Method = method,
-               `Classification Accuracy` = statistic,
-               `Classifier Name` = classifier_name,
-               `Statistic Name` = statistic_name)
+      if(input$balancedaccSelect == "Yes"){
+        
+        theresults %>%
+          dplyr::select(c(method, accuracy, balanced_accuracy, p_value_accuracy, p_value_balanced_accuracy, classifier_name, statistic_name)) %>%
+          rename(Method = method,
+                 `Classification Accuracy` = statistic,
+                 `Classification Accuracy p value` = p_value_accuracy,
+                 `Balanced Classification Accuracy` = balanced_accuracy,
+                 `Balanced Classification Accuracy p value` = p_value_balanced_accuracy,
+                 `Classifier Name` = classifier_name,
+                 `Statistic Name` = statistic_name)
+        
+      } else{
+        
+        theresults %>%
+          dplyr::select(c(method, accuracy, p_value_accuracy, classifier_name, statistic_name)) %>%
+          rename(Method = method,
+                 `Classification Accuracy` = accuracy,
+                 `Classification Accuracy p value` = p_value_accuracy,
+                 `Classifier Name` = classifier_name,
+                 `Statistic Name` = statistic_name)
+      }
       
     } else{
-      multivariateOutputs()$TestStatistics %>%
-        rename(Method = method,
-               `Classification Accuracy` = statistic_value,
-               `p value` = p_value,
-               `Classifier Name` = classifier_name,
-               `Statistic Name` = statistic_name)
+      
+      if(input$balancedaccSelect == "Yes"){
+        
+        theresults %>%
+          dplyr::select(c(method, accuracy, balanced_accuracy, classifier_name, statistic_name)) %>%
+          rename(Method = method,
+                 `Classification Accuracy` = accuracy,
+                 `Balanced Classification Accuracy` = balanced_accuracy,
+                 `Classifier Name` = classifier_name,
+                 `Statistic Name` = statistic_name)
+        
+      } else{
+        
+        theresults %>%
+          dplyr::select(c(method, accuracy, classifier_name, statistic_name)) %>%
+          rename(Method = method,
+                 `Classification Accuracy` = accuracy,
+                 `Classifier Name` = classifier_name,
+                 `Statistic Name` = statistic_name)
+      }
     }
   })
   
@@ -560,6 +609,12 @@ shinyServer <- function(input, output, session) {
       pool_empirical_null <- FALSE
     }
     
+    if(input$balancedaccSelect == binaries[2]){
+      use_balanced_accuracy <- TRUE
+    } else{
+      use_balanced_accuracy <- FALSE
+    }
+    
     # Catch cases where user makes an error in the browser to avoid red message
     
     if(input$nullmethodSelect == "model free shuffles" && pool_empirical_null){
@@ -570,11 +625,11 @@ shinyServer <- function(input, output, session) {
     
     univariateOutputList <- compute_top_features(featureMatrix(), id_var = "id", group_var = "group",
                                                  num_features = input$numFeaturesSlider, normalise_violin_plots = FALSE, test_method = input$classifierSelect,
-                                                 method = "z-score", cor_method = input$corMethodUnivariate, 
+                                                 use_balanced_accuracy = use_balanced_accuracy, method = "z-score", cor_method = input$corMethodUnivariate, 
                                                  use_k_fold = use_k_fold, num_folds = input$kfoldSlider,
                                                  use_empirical_null = use_empirical_null, null_testing_method = input$nullmethodSelect,
                                                  p_value_method = input$pvaluemethodSelect, num_permutations = input$permutationSlider, 
-                                                 pool_empirical_null = pool_empirical_null)
+                                                 pool_empirical_null = pool_empirical_null, seed = 123)
     
     return(univariateOutputList)
   })
@@ -622,12 +677,53 @@ shinyServer <- function(input, output, session) {
       )
     )
     
-    univariateOutputs()$ResultsTable %>%
-      rename(Feature = feature,
-             `Classification Accuracy` = statistic_value,
-             `p value` = p_value,
-             `Classifier Name` = classifier_name,
-             `Statistic Name` = statistic_name)
+    if(input$empiricalnullSelect == "Yes"){
+      
+      if(input$balancedaccSelect == "Yes"){
+        
+        univariateOutputs()$ResultsTable %>%
+          dplyr::select(c(feature, accuracy, balanced_accuracy, p_value_accuracy, p_value_balanced_accuracy, classifier_name, statistic_name)) %>%
+          rename(Feature = feature,
+                 `Classification Accuracy` = accuracy,
+                 `Classification Accuracy p value` = p_value_accuracy,
+                 `Balanced Classification Accuracy` = balanced_accuracy,
+                 `Balanced Classification Accuracy p value` = p_value_balanced_accuracy,
+                 `Classifier Name` = classifier_name,
+                 `Statistic Name` = statistic_name)
+        
+      } else{
+        
+        univariateOutputs()$ResultsTable %>%
+          dplyr::select(c(feature, accuracy, p_value_accuracy, classifier_name, statistic_name)) %>%
+          rename(Feature = feature,
+                 `Classification Accuracy` = accuracy,
+                 `Classification Accuracy p value` = p_value_accuracy,
+                 `Classifier Name` = classifier_name,
+                 `Statistic Name` = statistic_name)
+      }
+      
+    } else{
+      
+      if(input$balancedaccSelect == "Yes"){
+        
+        univariateOutputs()$ResultsTable %>%
+          dplyr::select(c(feature, accuracy, balanced_accuracy, classifier_name, statistic_name)) %>%
+          rename(Feature = feature,
+                 `Classification Accuracy` = accuracy,
+                 `Balanced Classification Accuracy` = balanced_accuracy,
+                 `Classifier Name` = classifier_name,
+                 `Statistic Name` = statistic_name)
+        
+      } else{
+        
+        univariateOutputs()$ResultsTable %>%
+          dplyr::select(c(feature, accuracy, classifier_name, statistic_name)) %>%
+          rename(Feature = feature,
+                 `Classification Accuracy` = accuracy,
+                 `Classifier Name` = classifier_name,
+                 `Statistic Name` = statistic_name)
+      }
+    }
   })
   
 }

@@ -74,6 +74,10 @@ navtab5 <- "ABOUT"
 
 options(scipen = 999)
 
+# Define "not in" operator
+
+"%ni%" <- Negate("%in%")
+
 # Helper vectors
 
 all_scalers <- c("z-score", "Sigmoid", "RobustSigmoid", "MinMax")
@@ -83,4 +87,4 @@ lowdims <- c("PCA", "t-SNE")
 cor_methods <- c("pearson", "spearman")
 classifiers <- unique(caretModels$model)
 null_testing_methods <- c("model free shuffles", "null model fits")
-p_value_methods <- c("empirical", "gaussian")
+p_value_methods <- c("gaussian", "empirical")
