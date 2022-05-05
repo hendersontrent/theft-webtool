@@ -63,7 +63,7 @@ fit_single_feature_models <- function(data, test_method, use_balanced_accuracy, 
     
     u <- dplyr::union(predict(mod, newdata = tmp), tmp$group)
     mytable <- table(factor(predict(mod, newdata = tmp), u), factor(tmp$group, u))
-    cm <- as.matrix(caret::confusionMatrix(mytable)$table)
+    cm <- t(as.matrix(caret::confusionMatrix(mytable)$table)) # Transpose as {caret} has reversed format
     
     if(use_balanced_accuracy){
       
@@ -386,7 +386,7 @@ mean_diff_calculator <- function(data, x, method){
   if(method == "t-test"){
     results <- stats::t.test(formula = stats::formula(paste0(colnames(data[x]), " ~ group")), data = data)
   } else{
-    results <- stats::t.test(formula = stats::formula(paste0(colnames(data[x]), " ~ group")), data = data)
+    results <- stats::wilcox.test(formula = stats::formula(paste0(colnames(data[x]), " ~ group")), data = data)
   }
   
   results <- data.frame(feature = results$data.name, 
