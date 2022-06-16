@@ -547,6 +547,7 @@ compute_top_features <- function(data, id_var = "id", group_var = "group",
   FeatureFeatureCorrelationPlot <- try(draw_top_feature_plot(data = dataFiltered,
                                                              method = method,
                                                              cor_method = cor_method,
+                                                             clust_method = clust_method,
                                                              num_features = num_features))
   
   if("try-error" %in% class(FeatureFeatureCorrelationPlot)){
@@ -556,6 +557,7 @@ compute_top_features <- function(data, id_var = "id", group_var = "group",
     FeatureFeatureCorrelationPlot <- try(draw_top_feature_plot(data = dataFiltered,
                                                                method = "z-score",
                                                                cor_method = cor_method,
+                                                               clust_method = clust_method,
                                                                num_features = num_features))
   }
   
