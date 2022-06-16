@@ -284,12 +284,14 @@ shinyServer <- function(input, output, session) {
       
       plot_low_dimension(featureMatrix(), is_normalised = FALSE, id_var = "id", group_var = NULL, 
                          method = input$inputScaler, plot = TRUE, highlight = input$pca_highlighter, id_filt = input$selectID,
-                         low_dim_method = input$low_dimSelect, perplexity = input$perplexitySlider, show_covariance = show_covariance_param)
+                         low_dim_method = input$low_dimSelect, perplexity = input$perplexitySlider, show_covariance = show_covariance_param,
+                         seed = 123)
     } else{
       
       plot_low_dimension(featureMatrix(), is_normalised = FALSE, id_var = "id", group_var = "group", 
                          method = input$inputScaler, plot = TRUE, highlight = input$pca_highlighter, id_filt = input$selectID,
-                         low_dim_method = input$low_dimSelect, perplexity = input$perplexitySlider, show_covariance = show_covariance_param)
+                         low_dim_method = input$low_dimSelect, perplexity = input$perplexitySlider, show_covariance = show_covariance_param,
+                         seed = 123)
     }
   })
   
@@ -396,7 +398,8 @@ shinyServer <- function(input, output, session) {
     
     # Render plot
     
-    plot_feature_matrix(data = featureMatrix(), id_var = "id", is_normalised = FALSE, method = input$inputScaler2, interactive = TRUE)
+    plot_all_features(data = featureMatrix(), id_var = "id", is_normalised = FALSE, method = input$inputScaler2, 
+                      clust_method = input$clustMethod, interactive = TRUE)
   })
   
   #-----------------------
@@ -415,7 +418,7 @@ shinyServer <- function(input, output, session) {
     # Render plot
     
     plot_feature_correlations(data = featureMatrix(), is_normalised = FALSE, id_var = "id", names_var = "names", values_var = "values",
-                             method = input$inputScaler2, interactive = TRUE)
+                             method = input$inputScaler2, cor_method = input$corMethod, clust_method = input$clustMethod, interactive = TRUE)
   })
   
   #-------------------------------
@@ -434,7 +437,7 @@ shinyServer <- function(input, output, session) {
     # Render plot
     
     plot_ts_correlations(data = tmp(), is_normalised = FALSE, id_var = "id", values_var = "values",
-                         method = input$inputScaler2, cor_method = input$corMethod, interactive = TRUE)
+                         method = input$inputScaler2, cor_method = input$corMethod, clust_method = input$clustMethod, interactive = TRUE)
   })
   
   #------------------ Classifier page ------------------
@@ -617,7 +620,7 @@ shinyServer <- function(input, output, session) {
     
     # Catch cases where user makes an error in the browser to avoid red message
     
-    if(input$nullmethodSelect == "model free shuffles" && pool_empirical_null){
+    if(input$nullmethodSelect == "ModelFreeShuffles" && pool_empirical_null){
       pool_empirical_null <- FALSE
     }
     
@@ -626,7 +629,7 @@ shinyServer <- function(input, output, session) {
     univariateOutputList <- compute_top_features(featureMatrix(), id_var = "id", group_var = "group",
                                                  num_features = input$numFeaturesSlider, normalise_violin_plots = FALSE, test_method = input$classifierSelect,
                                                  use_balanced_accuracy = use_balanced_accuracy, method = "z-score", cor_method = input$corMethodUnivariate, 
-                                                 use_k_fold = use_k_fold, num_folds = input$kfoldSlider,
+                                                 clust_method = input$clustMethodUnivariate, use_k_fold = use_k_fold, num_folds = input$kfoldSlider,
                                                  use_empirical_null = use_empirical_null, null_testing_method = input$nullmethodSelect,
                                                  p_value_method = input$pvaluemethodSelect, num_permutations = input$permutationSlider, 
                                                  pool_empirical_null = pool_empirical_null, seed = 123)

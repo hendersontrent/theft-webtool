@@ -84,7 +84,7 @@ simulate_null_acc <- function(x, num_permutations = 10000, use_balanced_accuracy
   
   outs <- 1:num_permutations %>%
     purrr::map_df(~ calculate_accuracy(x, seed = .x, use_balanced_accuracy = use_balanced_accuracy, pb = pb))
-
+  
   return(outs)
 }
 
@@ -195,7 +195,7 @@ calculate_balanced_accuracy <- function(data, lev = NULL, model = NULL) {
   
   # Calculate balanced accuracy from confusion matrix as the average of class recalls as per https://arxiv.org/pdf/2008.05756.pdf
   
-  cm <- t(as.matrix(caret::confusionMatrix(data$pred, data$obs)$table)) # Transpose as {caret} has reversed format
+  cm <- t(as.matrix(caret::confusionMatrix(data$pred, data$obs)$table))
   
   recall <- 1:nrow(cm) %>%
     purrr::map(~ calculate_recall(cm, x = .x)) %>%
@@ -290,7 +290,7 @@ fit_multi_feature_models <- function(data, test_method, use_balanced_accuracy, u
     
     u <- dplyr::union(predict(mod, newdata = tmp), tmp$group)
     mytable <- table(factor(stats::predict(mod, newdata = tmp), u), factor(tmp$group, u))
-    cm <- t(as.matrix(caret::confusionMatrix(mytable)$table)) # Transpose as {caret} has reversed format
+    cm <- t(as.matrix(caret::confusionMatrix(mytable)$table))
     
     if(use_balanced_accuracy){
       
@@ -318,7 +318,7 @@ fit_multi_feature_models <- function(data, test_method, use_balanced_accuracy, u
   
   if(use_empirical_null){
     
-    if(null_testing_method == "null model fits"){
+    if(null_testing_method == "NullModelFits"){
       
       # Set up progress bar for {purrr::map} iterations
       
@@ -328,12 +328,12 @@ fit_multi_feature_models <- function(data, test_method, use_balanced_accuracy, u
       
       nullOuts <- 1:num_permutations %>%
         purrr::map_df( ~ fit_empirical_null_models(data = tmp,
-                                                s = .x,
-                                                test_method = test_method,
-                                                theControl = fitControl,
-                                                pb = pb,
-                                                univariable = FALSE,
-                                                use_balanced_accuracy = use_balanced_accuracy)) %>%
+                                                   s = .x,
+                                                   test_method = test_method,
+                                                   theControl = fitControl,
+                                                   pb = pb,
+                                                   univariable = FALSE,
+                                                   use_balanced_accuracy = use_balanced_accuracy)) %>%
         dplyr::mutate(category = "Null")
       
       finalOuts <- dplyr::bind_rows(mainOuts, nullOuts)
@@ -365,7 +365,7 @@ calculate_multivariable_statistics <- function(data, set = NULL, p_value_method,
   
   if(!is.null(set)){
     vals <- data %>%
-      dplyr::filter(.data$method %in% c(set, "model free shuffles"))
+      dplyr::filter(.data$method %in% c(set, "ModelFreeShuffles"))
   } else{
     vals <- data
   }
@@ -527,6 +527,70 @@ mywhere <- function(fn) {
   }
 }
 
+#------------------------------
+# Pre-processing by feature set
+#------------------------------
+
+clean_by_set <- function(data, themethod = NULL){
+  
+  if(is.null(themethod)){
+    tmp_cleaner <- data
+    themethod <- "matrix of all features"
+  } else{
+    tmp_cleaner <- data %>%
+      dplyr::filter(.data$method == themethod)
+  }
+  
+  # Widening for model matrix
+  
+  tmp_cleaner <- tmp_cleaner %>%
+    dplyr::mutate(names = paste0(.data$method, "_", .data$names)) %>%
+    dplyr::select(-c(.data$method)) %>%
+    tidyr::pivot_wider(id_cols = c("id", "group"), names_from = "names", values_from = "values")
+  
+  ncols <- ncol(tmp_cleaner)
+  
+  # Delete features that are all NaNs and features with constant values
+  
+  tmp_cleaner <- tmp_cleaner %>%
+    dplyr::select_if(~sum(!is.na(.)) > 0) %>%
+    dplyr::select(mywhere(~dplyr::n_distinct(.) > 1))
+  
+  if(ncol(tmp_cleaner) < ncols){
+    message(paste0("Dropped ", ncols - ncol(tmp_cleaner), "/", ncol(tmp_cleaner), " features from ", themethod, " due to containing NAs or only a constant."))
+  }
+  
+  # Check NAs
+  
+  nrows <- nrow(tmp_cleaner)
+  
+  tmp_cleaner <- tmp_cleaner %>%
+    tidyr::drop_na()
+  
+  if(nrow(tmp_cleaner) < nrows){
+    message(paste0("Dropped ", nrows - nrow(tmp_cleaner), " unique IDs due to NA values."))
+  }
+  
+  # Clean up column (feature) names so models fit properly (mainly an issue with SVM formula) and re-join set labels
+  # and prep factor levels as names for {caret} if the 3 base two-class options aren't being used
+  
+  tmp_cleaner <- tmp_cleaner %>%
+    janitor::clean_names() %>%
+    tidyr::pivot_longer(cols = 3:ncol(tmp_cleaner), names_to = "names", values_to = "values") %>%
+    dplyr::mutate(method = gsub("_.*", "\\1", .data$names),
+                  method = dplyr::case_when(
+                    .data$method == "tsfel" ~ "TSFEL",
+                    .data$method == "kats"  ~ "Kats",
+                    TRUE                    ~ method)) %>%
+    dplyr::mutate(group = as.factor(.data$group)) %>%
+    dplyr::mutate(group = as.integer(.data$group),
+                  group = paste0("Group_", .data$group),
+                  group = make.names(.data$group),
+                  group = as.factor(.data$group))
+  
+  return(tmp_cleaner)
+}
+
 #---------------- Main function ----------------
 
 #' Fit a classifier to feature matrix using all features or all features by set
@@ -574,7 +638,7 @@ mywhere <- function(fn) {
 #'   use_k_fold = TRUE,
 #'   num_folds = 10,
 #'   use_empirical_null = TRUE,
-#'   null_testing_method = "model free shuffles",
+#'   null_testing_method = "ModelFreeShuffles",
 #'   p_value_method = "gaussian",
 #'   num_permutations = 50,
 #'   seed = 123)
@@ -584,7 +648,7 @@ mywhere <- function(fn) {
 fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group",
                                          by_set = FALSE, test_method = "gaussprRadial",
                                          use_balanced_accuracy = FALSE, use_k_fold = TRUE, num_folds = 10,
-                                         use_empirical_null = FALSE, null_testing_method = c("model free shuffles", "null model fits"),
+                                         use_empirical_null = FALSE, null_testing_method = c("ModelFreeShuffles", "NullModelFits"),
                                          p_value_method = c("empirical", "gaussian"), num_permutations = 100, seed = 123){
   
   #---------- Check arguments ------------
@@ -596,15 +660,15 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
   '%ni%' <- Negate('%in%')
   
   if(expected_cols_1 %ni% the_cols){
-    stop("data should contain at least three columns called 'names', 'values', and 'method'. These are automatically produced by calculate_features(). Please consider running this first and then passing the resultant dataframe in to this function.")
+    stop("data should contain at least three columns called 'names', 'values', and 'method'. These are automatically produced by theft::calculate_features(). Please consider running this first and then passing the resultant dataframe to this function.")
   }
   
   if(expected_cols_2 %ni% the_cols){
-    stop("data should contain at least three columns called 'names', 'values', and 'method'. These are automatically produced by calculate_features(). Please consider running this first and then passing the resultant dataframe in to this function.")
+    stop("data should contain at least three columns called 'names', 'values', and 'method'. These are automatically produced by theft::calculate_features(). Please consider running this first and then passing the resultant dataframe to this function.")
   }
   
   if(expected_cols_3 %ni% the_cols){
-    stop("data should contain at least three columns called 'names', 'values', and 'method'. These are automatically produced by calculate_features(). Please consider running this first and then passing the resultant dataframe in to this function.")
+    stop("data should contain at least three columns called 'names', 'values', and 'method'. These are automatically produced by theft::calculate_features(). Please consider running this first and then passing the resultant dataframe to this function.")
   }
   
   if(!is.numeric(data$values)){
@@ -617,23 +681,33 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
   
   # Null testing options
   
-  theoptions <- c("model free shuffles", "null model fits")
+  theoptions <- c("ModelFreeShuffles", "NullModelFits")
+  
+  if(null_testing_method == "model free shuffles"){
+    message("'model free shuffles' is deprecated, please use 'ModelFreeShuffles' instead.")
+    null_testing_method <- "ModelFreeShuffles"
+  }
+  
+  if(null_testing_method == "null model fits"){
+    message("'null model fits' is deprecated, please use 'NullModelFits' instead.")
+    null_testing_method <- "NullModelFits"
+  }
   
   if(is.null(null_testing_method) || missing(null_testing_method)){
-    null_testing_method <- "model free shuffles"
-    message("No argument supplied to null_testing_method. Using 'model free shuffles' as default.")
+    null_testing_method <- "ModelFreeShuffles"
+    message("No argument supplied to null_testing_method. Using 'ModelFreeShuffles' as default.")
   }
   
   if(length(null_testing_method) != 1){
-    stop("null_testing_method should be a single string of either 'model free shuffles' or 'null model fits'.")
+    stop("null_testing_method should be a single string of either 'ModelFreeShuffles' or 'NullModelFits'.")
   }
   
   if(null_testing_method %ni% theoptions){
-    stop("null_testing_method should be a single string of either 'model free shuffles' or 'null model fits'.")
+    stop("null_testing_method should be a single string of either 'ModelFreeShuffles' or 'NullModelFits'.")
   }
   
-  if(null_testing_method == "model free shuffles" && num_permutations < 1000){
-    message("Null testing method 'model free shuffles' is fast. Consider running more permutations for more reliable results. N = 10000 is recommended.")
+  if(null_testing_method == "ModelFreeShuffles" && num_permutations < 1000){
+    message("Null testing method 'ModelFreeShuffles' is fast. Consider running more permutations for more reliable results. N = 10000 is recommended.")
   }
   
   # p-value options
@@ -710,45 +784,18 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
   
   #------------- Preprocess data --------------
   
-  # Widening for model matrix
+  # NOTE: This performs NA checking and filtering by feature set to maximise features and IDs for each if `by_set = TRUE`
   
-  data_id <- data_id %>%
-    dplyr::mutate(names = paste0(.data$method, "_", .data$names)) %>%
-    dplyr::select(-c(.data$method)) %>%
-    tidyr::pivot_wider(id_cols = c("id", "group"), names_from = "names", values_from = "values")
-  
-  ncols <- ncol(data_id)
-  
-  # Delete features that are all NaNs and features with constant values
-  
-  data_id <- data_id %>%
-    dplyr::select_if(~sum(!is.na(.)) > 0) %>%
-    dplyr::select(mywhere(~dplyr::n_distinct(.) > 1))
-  
-  if(ncol(data_id) < ncols){
-    message(paste0("Dropped ", ncols - ncol(data_id), " features due to containing NAs or only a constant."))
+  if(by_set){
+    
+    message("Assessing feature values and unique IDs for NAs by individual set.")
+    
+    data_id <- unique(data_id$method) %>%
+      purrr::map_df(~ clean_by_set(data = data_id, themethod = .x))
+  } else{
+    message("Assessing feature values and unique IDs for NAs using matrix of all features.")
+    data_id <- clean_by_set(data = data_id, themethod = NULL)
   }
-  
-  # Check NAs
-  
-  nrows <- nrow(data_id)
-  
-  data_id <- data_id %>%
-    tidyr::drop_na()
-  
-  if(nrow(data_id) < nrows){
-    message(paste0("Dropped ", nrows - nrow(data_id), " unique IDs due to NA values."))
-  }
-  
-  # Clean up column (feature) names so models fit properly (mainly an issue with SVM formula) and re-join set labels
-  # and prep factor levels as names for {caret} if the 3 base two-class options aren't being used
-  
-  data_id <- data_id %>%
-    janitor::clean_names() %>%
-    tidyr::pivot_longer(cols = 3:ncol(data_id), names_to = "names", values_to = "values") %>%
-    dplyr::mutate(method = gsub("_.*", "\\1", .data$names)) %>%
-    dplyr::mutate(group = make.names(.data$group),
-                  group = as.factor(.data$group))
   
   #------------- Fit models -------------------
   
@@ -762,7 +809,7 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
   
   # Very important coffee console message
   
-  if(null_testing_method == "null model fits" & num_permutations > 50){
+  if(null_testing_method == "NullModelFits" & num_permutations > 50){
     message("This will take a while. Great reason to go grab a coffee and relax ^_^")
   }
   
@@ -800,7 +847,7 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
   
   # Run nulls if random shuffles are to be used
   
-  if(null_testing_method == "model free shuffles"){
+  if(null_testing_method == "ModelFreeShuffles"){
     
     # Run random shuffles procedure
     
@@ -811,7 +858,7 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
     
     nullOuts <- simulate_null_acc(x = x_prep, num_permutations = num_permutations, use_balanced_accuracy = use_balanced_accuracy) %>%
       dplyr::mutate(category = "Null",
-                    method = "model free shuffles",
+                    method = "ModelFreeShuffles",
                     num_features_used = NA)
     
     if(use_k_fold){
@@ -828,6 +875,10 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
   }
   
   #--------------- Evaluate results ---------------
+  
+  # Get chance probability
+  
+  chance <- round((1 / length(unique(data_id$group)) * 100), digits = 2)
   
   if(by_set){
     
@@ -904,8 +955,9 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
                                      text = paste('<b>Method: </b>', method,
                                                   paste0('<br><b>Classification accuracy: </b>', 
                                                          round(statistic, digits = 2), "%")))) +
-        ggplot2::geom_bar(ggplot2::aes(y = .data$statistic, fill = .data$method), stat = "identity") +
-        ggplot2::geom_errorbar(ggplot2::aes(ymin = .data$lower, ymax = .data$upper), colour = "black")
+        ggplot2::geom_hline(yintercept = chance, colour = "black", lty = "dashed", size = 1) +
+        ggplot2::geom_point(ggplot2::aes(y = .data$statistic), stat = "identity", size = 5) +
+        ggplot2::geom_errorbar(ggplot2::aes(ymin = .data$lower, ymax = .data$upper), size = 1)
       
       # Expand y axis if max (mean + (2*SD)) is > 100%
       
@@ -925,7 +977,7 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
       }
       
       FeatureSetResultsPlot <- FeatureSetResultsPlot +
-        ggplot2::labs(subtitle = "Number of features is indicated in parentheses. Error bars are +- 2 times SD")
+        ggplot2::labs(subtitle = "Number of features is indicated in parentheses. Error bars are +/- 2 times SD. Dashed line = chance")
       
     } else{
       
@@ -934,8 +986,9 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
                                      text = paste('<b>Method: </b>', method, 
                                                   paste0('<br><b>Classification accuracy: </b>',
                                                          round(statistic, digits = 2), "%")))) +
-        ggplot2::geom_bar(ggplot2::aes(y = .data$statistic, fill = .data$method), stat = "identity") +
-        ggplot2::labs(subtitle = "Number of features is indicated in parentheses") +
+        ggplot2::geom_hline(yintercept = chance, colour = "black", lty = "dashed", size = 1) +
+        ggplot2::geom_point(ggplot2::aes(y = .data$statistic, colour = .data$method), stat = "identity", size = 5) +
+        ggplot2::labs(subtitle = "Number of features is indicated in parentheses. Dashed line = chance") +
         ggplot2::scale_y_continuous(limits = c(0, 100),
                                     breaks = seq(from = 0, to = 100, by = 20),
                                     labels = function(x) paste0(x, "%"))
@@ -945,9 +998,10 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
       ggplot2::labs(title = "Classification accuracy by feature set",
                     y = "Classification accuracy (%)",
                     x = "Feature set",
-                    fill = NULL) +
+                    fill = NULL,
+                    colour = NULL) +
       ggplot2::theme_bw() +
-      ggplot2::scale_fill_brewer(palette = "Dark2") +
+      ggplot2::scale_colour_brewer(palette = "Dark2") +
       ggplot2::theme(panel.grid.minor = ggplot2::element_blank(),
                      legend.position = "none",
                      axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
@@ -1075,8 +1129,9 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
                                      text = paste('<b>Method: </b>', method, 
                                                   paste0('<br><b>Classification accuracy: </b>',
                                                          round(statistic, digits = 2), "%")))) +
-        ggplot2::geom_bar(ggplot2::aes(y = .data$statistic, fill = .data$method), stat = "identity") +
-        ggplot2::geom_errorbar(ggplot2::aes(ymin = .data$lower, ymax = .data$upper), colour = "black")
+        ggplot2::geom_hline(yintercept = chance, colour = "black", lty = "dashed", size = 1) +
+        ggplot2::geom_point(ggplot2::aes(y = .data$statistic), stat = "identity", size = 5) +
+        ggplot2::geom_errorbar(ggplot2::aes(ymin = .data$lower, ymax = .data$upper), size = 1)
       
       # Expand y axis if max (mean + (2*SD)) is > 100%
       
@@ -1096,7 +1151,7 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
       }
       
       FeatureSetResultsPlot <- FeatureSetResultsPlot +
-        ggplot2::labs(subtitle = "Error bars are +- 2 times SD")
+        ggplot2::labs(subtitle = "Error bars are +/- 2 times SD. Dashed line = chance")
       
     } else{
       
@@ -1105,7 +1160,8 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
                                      text = paste('<b>Method: </b>', method, 
                                                   paste0('<br><b>Classification accuracy: </b>',
                                                          round(statistic, digits = 2), "%")))) +
-        ggplot2::geom_bar(ggplot2::aes(y = .data$statistic, fill = .data$method), stat = "identity") +
+        ggplot2::geom_hline(yintercept = chance, colour = "black", lty = "dashed", size = 1) +
+        ggplot2::geom_point(ggplot2::aes(y = .data$statistic), stat = "identity", size = 5) +
         ggplot2::scale_y_continuous(limits = c(0, 100),
                                     breaks = seq(from = 0, to = 100, by = 20),
                                     labels = function(x) paste0(x, "%"))
@@ -1115,9 +1171,10 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
       ggplot2::labs(title = "Classification accuracy by feature set",
                     y = "Classification accuracy (%)",
                     x = "Feature set",
-                    fill = NULL) +
+                    fill = NULL,
+                    colour = NULL) +
       ggplot2::theme_bw() +
-      ggplot2::scale_fill_brewer(palette = "Dark2") +
+      ggplot2::scale_colour_brewer(palette = "Dark2") +
       ggplot2::theme(panel.grid.minor = ggplot2::element_blank(),
                      legend.position = "none",
                      axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
