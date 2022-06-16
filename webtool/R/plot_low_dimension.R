@@ -46,7 +46,8 @@
 plot_low_dimension <- function(data, is_normalised = FALSE, id_var = "id", group_var = NULL, 
                                method = c("z-score", "Sigmoid", "RobustSigmoid", "MinMax"),
                                low_dim_method = c("PCA", "t-SNE"), perplexity = 30, 
-                               plot = TRUE, show_covariance = FALSE, seed = 123){
+                               plot = TRUE, show_covariance = FALSE, seed = 123,
+                               highlight = c("No", "Yes"), id_filt = NULL){
   
   # Make z-score the default
   

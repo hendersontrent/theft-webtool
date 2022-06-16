@@ -283,15 +283,15 @@ shinyServer <- function(input, output, session) {
     if("group" %ni% colsList){
       
       plot_low_dimension(featureMatrix(), is_normalised = FALSE, id_var = "id", group_var = NULL, 
-                         method = input$inputScaler, plot = TRUE, highlight = input$pca_highlighter, id_filt = input$selectID,
-                         low_dim_method = input$low_dimSelect, perplexity = input$perplexitySlider, show_covariance = show_covariance_param,
-                         seed = 123)
+                         method = input$inputScaler, plot = TRUE, low_dim_method = input$low_dimSelect, 
+                         perplexity = input$perplexitySlider, show_covariance = show_covariance_param,
+                         seed = 123, highlight = input$pca_highlighter, id_filt = input$selectID)
     } else{
       
       plot_low_dimension(featureMatrix(), is_normalised = FALSE, id_var = "id", group_var = "group", 
-                         method = input$inputScaler, plot = TRUE, highlight = input$pca_highlighter, id_filt = input$selectID,
-                         low_dim_method = input$low_dimSelect, perplexity = input$perplexitySlider, show_covariance = show_covariance_param,
-                         seed = 123)
+                         method = input$inputScaler, plot = TRUE, low_dim_method = input$low_dimSelect, 
+                         perplexity = input$perplexitySlider, show_covariance = show_covariance_param,
+                         seed = 123, highlight = input$pca_highlighter, id_filt = input$selectID)
     }
   })
   
