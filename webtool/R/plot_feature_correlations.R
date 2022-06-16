@@ -200,8 +200,7 @@ plot_feature_correlations <- function(data, is_normalised = FALSE, id_var = "id"
   
   p <- p +
     ggplot2::geom_tile(ggplot2::aes(fill = .data$value)) +
-    ggplot2::labs(title = "Pairwise correlation matrix",
-                  x = "Feature",
+    ggplot2::labs(x = "Feature",
                   y = "Feature",
                   fill = "Absolute correlation coefficient") +
     ggplot2::scale_fill_stepsn(n.breaks = 6, colours = rev(mypalette),

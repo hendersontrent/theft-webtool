@@ -82,8 +82,7 @@ plot_quality_matrix <- function(data){
                                               '<br><b>Data Type:</b>', quality,
                                               '<br><b>Proportion:</b>', round(props, digits = 2)))) +
     ggplot2::geom_bar(stat = "identity", ggplot2::aes(fill = .data$quality)) +
-    ggplot2::labs(title = "Data quality for computed features",
-                  x = "Feature",
+    ggplot2::labs(x = "Feature",
                   y = "Proportion of outputs",
                   fill = "Data type") +
     ggplot2::scale_y_continuous(limits = c(0,1),

@@ -170,8 +170,7 @@ plot_ts_correlations <- function(data, is_normalised = FALSE, id_var = "id",
   
   p <- p +
     ggplot2::geom_tile(ggplot2::aes(fill = .data$value)) +
-    ggplot2::labs(title = "Pairwise correlation matrix",
-                  x = "Time series",
+    ggplot2::labs(x = "Time series",
                   y = "Time series",
                   fill = "Absolute correlation coefficient") +
     ggplot2::scale_fill_stepsn(n.breaks = 6, colours = rev(mypalette),

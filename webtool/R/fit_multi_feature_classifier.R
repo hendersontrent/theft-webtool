@@ -995,8 +995,7 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
     }
     
     FeatureSetResultsPlot <- FeatureSetResultsPlot +
-      ggplot2::labs(title = "Classification accuracy by feature set",
-                    y = "Classification accuracy (%)",
+      ggplot2::labs(y = "Classification accuracy (%)",
                     x = "Feature set",
                     fill = NULL,
                     colour = NULL) +
@@ -1168,8 +1167,7 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
     }
     
     FeatureSetResultsPlot <- FeatureSetResultsPlot +
-      ggplot2::labs(title = "Classification accuracy by feature set",
-                    y = "Classification accuracy (%)",
+      ggplot2::labs(y = "Classification accuracy (%)",
                     x = "Feature set",
                     fill = NULL,
                     colour = NULL) +
