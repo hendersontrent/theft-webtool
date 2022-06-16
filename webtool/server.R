@@ -577,9 +577,9 @@ shinyServer <- function(input, output, session) {
     }
   })
   
-  #----------------------
-  # Univariate classifier
-  #----------------------
+  #--------------------------
+  # Single feature classifier
+  #--------------------------
   
   # Fit model
   

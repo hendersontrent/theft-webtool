@@ -956,7 +956,7 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
                                                   paste0('<br><b>Classification accuracy: </b>', 
                                                          round(statistic, digits = 2), "%")))) +
         ggplot2::geom_hline(yintercept = chance, colour = "black", lty = "dashed", size = 1) +
-        ggplot2::geom_point(ggplot2::aes(y = .data$statistic), stat = "identity", size = 5) +
+        ggplot2::geom_point(ggplot2::aes(y = .data$statistic), stat = "identity", size = 3) +
         ggplot2::geom_errorbar(ggplot2::aes(ymin = .data$lower, ymax = .data$upper), size = 1)
       
       # Expand y axis if max (mean + (2*SD)) is > 100%
@@ -1130,7 +1130,7 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
                                                   paste0('<br><b>Classification accuracy: </b>',
                                                          round(statistic, digits = 2), "%")))) +
         ggplot2::geom_hline(yintercept = chance, colour = "black", lty = "dashed", size = 1) +
-        ggplot2::geom_point(ggplot2::aes(y = .data$statistic), stat = "identity", size = 5) +
+        ggplot2::geom_point(ggplot2::aes(y = .data$statistic), stat = "identity", size = 3) +
         ggplot2::geom_errorbar(ggplot2::aes(ymin = .data$lower, ymax = .data$upper), size = 1)
       
       # Expand y axis if max (mean + (2*SD)) is > 100%

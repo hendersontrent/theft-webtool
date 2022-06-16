@@ -91,13 +91,11 @@ plot_quality_matrix <- function(data){
     ggplot2::scale_fill_manual(values = my_palette) +
     ggplot2::theme_bw() +
     ggplot2::theme(panel.grid = ggplot2::element_blank(),
-                   legend.position = "bottom",
                    axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
   
   #-------- Convert to interactive graphic --------
   
   p <- plotly::ggplotly(p, tooltip = c("text")) %>%
-    layout(legend = list(orientation = "h", x = 0, y = -0.2)) %>%
     plotly::config(displayModeBar = FALSE)
 
   return(p)
