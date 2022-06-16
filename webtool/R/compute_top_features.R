@@ -4,29 +4,33 @@
 # Pairwise correlation plot
 #--------------------------
 
-draw_top_feature_plot <- function(data, method, cor_method, num_features){
+draw_top_feature_plot <- function(data, method, cor_method, clust_method, num_features){
   
   # Wrangle dataframe
   
   cor_dat <- data %>%
-    dplyr::select(c(id, names, values)) %>%
+    dplyr::select(c(.data$id, .data$names, .data$values)) %>%
     tidyr::drop_na() %>%
-    dplyr::group_by(names) %>%
-    dplyr::mutate(values = normalise_feature_vector(values, method = method)) %>%
+    dplyr::group_by(.data$names) %>%
+    dplyr::mutate(values = normalise_feature_vector(.data$values, method = method)) %>%
     tidyr::drop_na() %>%
-    tidyr::pivot_wider(id_cols = id, names_from = names, values_from = values) %>%
-    dplyr::select(-c(id))
+    tidyr::pivot_wider(id_cols = .data$id, names_from = .data$names, values_from = .data$values) %>%
+    dplyr::select(-c(.data$id))
   
-  # Calculate correlations
+  # Calculate correlations and take absolute
   
-  result <- stats::cor(cor_dat, method = cor_method)
+  result <- abs(stats::cor(cor_dat, method = cor_method))
   
   # Perform clustering
   
-  row.order <- stats::hclust(stats::dist(result))$order # Hierarchical cluster on rows
-  col.order <- stats::hclust(stats::dist(t(result)))$order # Hierarchical cluster on columns
+  row.order <- stats::hclust(stats::dist(result, method = "euclidean"), method = clust_method)$order # Hierarchical cluster on rows
+  col.order <- stats::hclust(stats::dist(t(result), method = "euclidean"), method = clust_method)$order # Hierarchical cluster on columns
   dat_new <- result[row.order, col.order] # Re-order matrix by cluster outputs
   cluster_out <- reshape2::melt(as.matrix(dat_new)) # Turn into dataframe
+  
+  # Define a nice colour palette consistent with RColorBrewer in other functions
+  
+  mypalette <- c("#B2182B", "#D6604D", "#F4A582", "#FDDBC7", "#D1E5F0", "#92C5DE", "#4393C3", "#2166AC")
   
   # Draw plot
   
@@ -38,8 +42,9 @@ draw_top_feature_plot <- function(data, method, cor_method, num_features){
     ggplot2::geom_tile(ggplot2::aes(fill = value)) +
     ggplot2::labs(x = NULL,
                   y = NULL,
-                  fill = "Correlation coefficient") +
-    ggplot2::scale_fill_distiller(palette = "RdBu", limits = c(-1, 1)) +
+                  fill = "Absolute correlation coefficient") +
+    ggplot2::scale_fill_stepsn(n.breaks = 6, colours = rev(mypalette),
+                               show.limits = TRUE) +
     ggplot2::theme_bw() +
     ggplot2::theme(panel.grid = ggplot2::element_blank(),
                    axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
@@ -146,6 +151,7 @@ plot_feature_discrimination <- function(data, id_var = "id", group_var = "group"
 #' @param method a rescaling/normalising method to apply. Defaults to \code{"RobustSigmoid"}
 #' @param cor_method the correlation method to use. Defaults to \code{"pearson"}
 #' @param test_method the algorithm to use for quantifying class separation. Defaults to \code{"gaussprRadial"}
+#' @param clust_method the hierarchical clustering method to use for the pairwise correlation plot. Defaults to \code{"average"}
 #' @param use_balanced_accuracy a Boolean specifying whether to use balanced accuracy as the summary metric for caret model training. Defaults to \code{FALSE}
 #' @param use_k_fold a Boolean specifying whether to use k-fold procedures for generating a distribution of classification accuracy estimates if a \code{caret} model is specified for \code{test_method}. Defaults to \code{ FALSE}
 #' @param num_folds an integer specifying the number of k-folds to perform if \code{use_k_fold} is set to \code{TRUE}. Defaults to \code{10}
@@ -176,11 +182,12 @@ plot_feature_discrimination <- function(data, id_var = "id", group_var = "group"
 #'   method = "RobustSigmoid",
 #'   cor_method = "pearson",
 #'   test_method = "gaussprRadial",
+#'   clust_method = "average",
 #'   use_balanced_accuracy = FALSE,
 #'   use_k_fold = FALSE,
 #'   num_folds = 10,
 #'   use_empirical_null = TRUE,
-#'   null_testing_method = "model free shuffles",
+#'   null_testing_method = "ModelFreeShuffles",
 #'   p_value_method = "gaussian",
 #'   num_permutations = 100,
 #'   pool_empirical_null = FALSE,
@@ -193,9 +200,11 @@ compute_top_features <- function(data, id_var = "id", group_var = "group",
                                  normalise_violin_plots = FALSE,
                                  method = c("z-score", "Sigmoid", "RobustSigmoid", "MinMax"),
                                  cor_method = c("pearson", "spearman"),
-                                 test_method = "gaussprRadial", use_balanced_accuracy = FALSE,
+                                 test_method = "gaussprRadial", 
+                                 clust_method = c("average", "ward.D", "ward.D2", "single", "complete", "mcquitty", "median", "centroid"),
+                                 use_balanced_accuracy = FALSE,
                                  use_k_fold = FALSE, num_folds = 10, 
-                                 use_empirical_null = FALSE, null_testing_method = c("model free shuffles", "null model fits"),
+                                 use_empirical_null = FALSE, null_testing_method = c("ModelFreeShuffles", "NullModelFits"),
                                  p_value_method = c("empirical", "gaussian"), num_permutations = 50,
                                  pool_empirical_null = FALSE, seed = 123){
   
@@ -224,15 +233,15 @@ compute_top_features <- function(data, id_var = "id", group_var = "group",
   '%ni%' <- Negate('%in%')
   
   if(expected_cols_1 %ni% the_cols){
-    stop("data should contain at least three columns called 'names', 'values', and 'method'. These are automatically produced by calculate_features(). Please consider running this first and then passing the resultant dataframe in to this function.")
+    stop("data should contain at least three columns called 'names', 'values', and 'method'. These are automatically produced by theft::calculate_features(). Please consider running this first and then passing the resultant dataframe to this function.")
   }
   
   if(expected_cols_2 %ni% the_cols){
-    stop("data should contain at least three columns called 'names', 'values', and 'method'. These are automatically produced by calculate_features(). Please consider running this first and then passing the resultant dataframe in to this function.")
+    stop("data should contain at least three columns called 'names', 'values', and 'method'. These are automatically produced by theft::calculate_features(). Please consider running this first and then passing the resultant dataframe to this function.")
   }
   
   if(expected_cols_3 %ni% the_cols){
-    stop("data should contain at least three columns called 'names', 'values', and 'method'. These are automatically produced by calculate_features(). Please consider running this first and then passing the resultant dataframe in to this function.")
+    stop("data should contain at least three columns called 'names', 'values', and 'method'. These are automatically produced by theft::calculate_features(). Please consider running this first and then passing the resultant dataframe to this function.")
   }
   
   if(!is.numeric(data$values)){
@@ -271,25 +280,52 @@ compute_top_features <- function(data, id_var = "id", group_var = "group",
     stop("cor_method should be a single selection of 'pearson' or 'spearman'")
   }
   
+  # Clustering method selection
+  
+  the_clust_methods <-c("average", "ward.D", "ward.D2", "single", "complete", "mcquitty", "median", "centroid")
+  
+  if(clust_method %ni% the_clust_methods){
+    stop("clust_method should be a single selection of 'average', 'ward.D', 'ward.D2', 'single', 'complete', 'mcquitty', 'median', or 'centroid'.")
+  }
+  
+  if(length(clust_method) > 1){
+    stop("clust_method should be a single selection of 'average', 'ward.D', 'ward.D2', 'single', 'complete', 'mcquitty', 'median', or 'centroid'.")
+  }
+  
+  if(missing(clust_method) || is.null(clust_method)){
+    clust_method <- "average"
+    message("No argument supplied to clust_method Using 'average' as default.")
+  }
+  
   # Null testing options
   
-  theoptions <- c("model free shuffles", "null model fits")
-  
-  if(is.null(null_testing_method) || missing(null_testing_method)){
-    null_testing_method <- "model free shuffles"
-    message("No argument supplied to null_testing_method. Using 'model free shuffles' as default.")
+  if(length(null_testing_method) != 1 && test_method %ni% c("t-test", "wilcox", "binomial logistic")){
+    stop("null_testing_method should be a single string of either 'ModelFreeShuffles' or 'NullModelFits'.")
   }
   
-  if(length(null_testing_method) != 1){
-    stop("null_testing_method should be a single string of either 'model free shuffles' or 'null model fits'.")
+  if((is.null(null_testing_method) || missing(null_testing_method)) && test_method %ni% c("t-test", "wilcox", "binomial logistic")){
+    null_testing_method <- "ModelFreeShuffles"
+    message("No argument supplied to null_testing_method. Using 'ModelFreeShuffles' as default.")
   }
   
-  if(null_testing_method %ni% theoptions){
-    stop("null_testing_method should be a single string of either 'model free shuffles' or 'null model fits'.")
+  if(test_method %ni% c("t-test", "wilcox", "binomial logistic") && null_testing_method == "model free shuffles"){
+    message("'model free shuffles' is deprecated, please use 'ModelFreeShuffles' instead.")
+    null_testing_method <- "ModelFreeShuffles"
   }
   
-  if(null_testing_method == "model free shuffles" && pool_empirical_null){
-    stop("'model free shuffles' and pooled empirical null are incompatible (pooled null combines each feature's null into a grand null and features don'tt get a null if 'model free shuffles' is used). Please respecify.")
+  if(test_method %ni% c("t-test", "wilcox", "binomial logistic") && null_testing_method == "null model fits"){
+    message("'null model fits' is deprecated, please use 'NullModelFits' instead.")
+    null_testing_method <- "NullModelFits"
+  }
+  
+  theoptions <- c("ModelFreeShuffles", "NullModelFits")
+  
+  if(test_method %ni% c("t-test", "wilcox", "binomial logistic") && null_testing_method %ni% theoptions){
+    stop("null_testing_method should be a single string of either 'ModelFreeShuffles' or 'NullModelFits'.")
+  }
+  
+  if(test_method %ni% c("t-test", "wilcox", "binomial logistic") && null_testing_method == "ModelFreeShuffles" && num_permutations < 1000){
+    message("Null testing method 'ModelFreeShuffles' is fast. Consider running more permutations for more reliable results. N = 10000 is recommended.")
   }
   
   # p-value options
