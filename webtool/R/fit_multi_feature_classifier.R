@@ -956,7 +956,8 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
         ggplot2::ggplot(ggplot2::aes(x = stats::reorder(.data$method, -.data$statistic), 
                                      text = paste('<b>Method: </b>', method,
                                                   paste0('<br><b>Classification accuracy: </b>', 
-                                                         round(statistic, digits = 2), "%")))) +
+                                                         round(statistic, digits = 2), "%")),
+                                     colour = .data$method)) +
         ggplot2::geom_hline(yintercept = chance, colour = "black", lty = "dashed", size = 1) +
         ggplot2::geom_point(ggplot2::aes(y = .data$statistic), size = 3) +
         ggplot2::geom_errorbar(ggplot2::aes(ymin = .data$lower, ymax = .data$upper), size = 1)
@@ -987,9 +988,10 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
         ggplot2::ggplot(ggplot2::aes(x = stats::reorder(.data$method, -.data$statistic), 
                                      text = paste('<b>Method: </b>', method, 
                                                   paste0('<br><b>Classification accuracy: </b>',
-                                                         round(statistic, digits = 2), "%")))) +
+                                                         round(statistic, digits = 2), "%")),
+                                     colour = .data$method)) +
         ggplot2::geom_hline(yintercept = chance, colour = "black", lty = "dashed", size = 1) +
-        ggplot2::geom_point(ggplot2::aes(y = .data$statistic, colour = .data$method), size = 5) +
+        ggplot2::geom_point(ggplot2::aes(y = .data$statistic), size = 5) +
         ggplot2::labs(subtitle = "Number of features is indicated in parentheses. Dashed line = chance") +
         ggplot2::scale_y_continuous(limits = c(0, 100),
                                     breaks = seq(from = 0, to = 100, by = 20),
@@ -1133,8 +1135,8 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
                                                   paste0('<br><b>Classification accuracy: </b>',
                                                          round(statistic, digits = 2), "%")))) +
         ggplot2::geom_hline(yintercept = chance, colour = "black", lty = "dashed", size = 1) +
-        ggplot2::geom_point(ggplot2::aes(y = .data$statistic), size = 3) +
-        ggplot2::geom_errorbar(ggplot2::aes(ymin = .data$lower, ymax = .data$upper), size = 1)
+        ggplot2::geom_point(ggplot2::aes(y = .data$statistic), colour = "#1B9E77", size = 3) +
+        ggplot2::geom_errorbar(ggplot2::aes(ymin = .data$lower, ymax = .data$upper), colour = "#1B9E77", size = 1)
       
       # Expand y axis if max (mean + (2*SD)) is > 100%
       
@@ -1164,7 +1166,7 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
                                                   paste0('<br><b>Classification accuracy: </b>',
                                                          round(statistic, digits = 2), "%")))) +
         ggplot2::geom_hline(yintercept = chance, colour = "black", lty = "dashed", size = 1) +
-        ggplot2::geom_point(ggplot2::aes(y = .data$statistic), stat = "identity", size = 5) +
+        ggplot2::geom_point(ggplot2::aes(y = .data$statistic), colour = "#1B9E77", size = 5) +
         ggplot2::scale_y_continuous(limits = c(0, 100),
                                     breaks = seq(from = 0, to = 100, by = 20),
                                     labels = function(x) paste0(x, "%"))
@@ -1176,7 +1178,6 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
                     fill = NULL,
                     colour = NULL) +
       ggplot2::theme_bw() +
-      ggplot2::scale_colour_brewer(palette = "Dark2") +
       ggplot2::theme(panel.grid.minor = ggplot2::element_blank(),
                      legend.position = "none",
                      axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))

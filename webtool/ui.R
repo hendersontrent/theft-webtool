@@ -247,7 +247,7 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                             sidebarLayout(
                               sidebarPanel(
                                 h2("Page Information"),
-                                p("This page automates time-series classification using univariate or multivariate features as inputs to algorithms. Note that these algorithms may take a long time to run."),
+                                p("This page automates time-series classification using single feature or multi-feature inputs to machine learning algorithms. Note that these algorithms may take a long time to run."),
                                 h3("General Controls"),
                                 selectInput("classifierSelect", "Select a classification algorithm",
                                             choices = classifiers, selected = classifiers[51], multiple = FALSE),
