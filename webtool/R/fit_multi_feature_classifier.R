@@ -953,7 +953,7 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
                       upper = .data$statistic + (2 * .data$statistic_sd))
       
       FeatureSetResultsPlot <- accuracies %>%
-        ggplot2::ggplot(ggplot2::aes(x = stats::reorder(.data$method, -.data$statistic), 
+        ggplot2::ggplot(ggplot2::aes(x = stats::reorder(.data$method, -.data$statistic), y = .data$statistic,
                                      text = paste('<b>Method: </b>', method,
                                                   paste0('<br><b>Classification accuracy: </b>', 
                                                          round(statistic, digits = 2), "%"),
@@ -963,7 +963,7 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
                                                          round(upper, digits = 2), "%")),
                                      colour = .data$method)) +
         ggplot2::geom_hline(yintercept = chance, colour = "black", lty = "dashed", size = 1) +
-        ggplot2::geom_point(ggplot2::aes(y = .data$statistic), size = 3) +
+        ggplot2::geom_point(size = 3) +
         ggplot2::geom_errorbar(ggplot2::aes(ymin = .data$lower, ymax = .data$upper), size = 1)
       
       # Expand y axis if max (mean + (2*SD)) is > 100%
@@ -989,13 +989,13 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
     } else{
       
       FeatureSetResultsPlot <- accuracies %>%
-        ggplot2::ggplot(ggplot2::aes(x = stats::reorder(.data$method, -.data$statistic), 
+        ggplot2::ggplot(ggplot2::aes(x = stats::reorder(.data$method, -.data$statistic), y = .data$statistic,
                                      text = paste('<b>Method: </b>', method, 
                                                   paste0('<br><b>Classification accuracy: </b>',
                                                          round(statistic, digits = 2), "%")),
                                      colour = .data$method)) +
         ggplot2::geom_hline(yintercept = chance, colour = "black", lty = "dashed", size = 1) +
-        ggplot2::geom_point(ggplot2::aes(y = .data$statistic), size = 5) +
+        ggplot2::geom_point(size = 5) +
         ggplot2::labs(subtitle = "Number of features is indicated in parentheses. Dashed line = chance") +
         ggplot2::scale_y_continuous(limits = c(0, 100),
                                     breaks = seq(from = 0, to = 100, by = 20),
@@ -1134,7 +1134,7 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
                       upper = .data$statistic + (2 * .data$statistic_sd))
       
       FeatureSetResultsPlot <- accuracies %>%
-        ggplot2::ggplot(ggplot2::aes(x = .data$method,
+        ggplot2::ggplot(ggplot2::aes(x = .data$method, y = .data$statistic,
                                      text = paste('<b>Method: </b>', method,
                                                   paste0('<br><b>Classification accuracy: </b>', 
                                                          round(statistic, digits = 2), "%"),
@@ -1143,7 +1143,7 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
                                                   paste0('<br><b>Upper bound: </b>', 
                                                          round(upper, digits = 2), "%")))) +
         ggplot2::geom_hline(yintercept = chance, colour = "black", lty = "dashed", size = 1) +
-        ggplot2::geom_point(ggplot2::aes(y = .data$statistic), colour = "#1B9E77", size = 3) +
+        ggplot2::geom_point(colour = "#1B9E77", size = 3) +
         ggplot2::geom_errorbar(ggplot2::aes(ymin = .data$lower, ymax = .data$upper), colour = "#1B9E77", size = 1)
       
       # Expand y axis if max (mean + (2*SD)) is > 100%
@@ -1169,12 +1169,12 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
     } else{
       
       FeatureSetResultsPlot <- accuracies %>%
-        ggplot2::ggplot(ggplot2::aes(x = .data$method,
+        ggplot2::ggplot(ggplot2::aes(x = .data$method, y = .data$statistic,
                                      text = paste('<b>Method: </b>', method, 
                                                   paste0('<br><b>Classification accuracy: </b>',
                                                          round(statistic, digits = 2), "%")))) +
         ggplot2::geom_hline(yintercept = chance, colour = "black", lty = "dashed", size = 1) +
-        ggplot2::geom_point(ggplot2::aes(y = .data$statistic), colour = "#1B9E77", size = 5) +
+        ggplot2::geom_point(colour = "#1B9E77", size = 5) +
         ggplot2::scale_y_continuous(limits = c(0, 100),
                                     breaks = seq(from = 0, to = 100, by = 20),
                                     labels = function(x) paste0(x, "%"))
