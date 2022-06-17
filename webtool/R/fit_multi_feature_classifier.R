@@ -1036,7 +1036,7 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
       
       TestStatistics <- sets %>%
         purrr::map_df(~ calculate_multivariable_statistics(data = output, set = .x, p_value_method = p_value_method,
-                                                        use_balanced_accuracy = use_balanced_accuracy)) %>%
+                                                           use_balanced_accuracy = use_balanced_accuracy)) %>%
         dplyr::mutate(classifier_name = classifier_name,
                       statistic_name = statistic_name)
       
@@ -1059,9 +1059,9 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
     }
   } else{
     
-    #--------------
-    # Draw bar plot
-    #--------------
+    #----------
+    # Draw plot
+    #----------
     
     # Wrangle data into tidy format to facet
     

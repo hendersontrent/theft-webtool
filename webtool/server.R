@@ -520,15 +520,17 @@ shinyServer <- function(input, output, session) {
       )
     )
     
-    theresults <- multivariateOutputs()$RawClassificationResults %>%
-      filter(method %ni% c("model free shuffles", "null model fits"))
-    
-    if(nrow(theresults) == 1 && is.na(theresults$method)){
-      theresults <- theresults %>%
-        mutate(method = "Overall")
-    }
-    
     if(input$empiricalnullSelect == "Yes"){
+      
+      theresults <- multivariateOutputs()$TestStatistics
+      
+      if(nrow(theresults) == 1 && is.na(theresults$method)){
+        theresults <- theresults %>%
+          mutate(method = "Overall")
+      }
+      
+      theresults <- theresults %>%
+        filter(method %ni% c("ModelFreeShuffles", "NullModelFits"))
       
       if(input$balancedaccSelect == "Yes"){
         
@@ -554,6 +556,15 @@ shinyServer <- function(input, output, session) {
       }
       
     } else{
+      
+      theresults <- multivariateOutputs()$RawClassificationResults
+      
+      if(nrow(theresults) == 1 && is.na(theresults$method)){
+        theresults <- theresults %>%
+          mutate(method = "Overall")
+      }
+      
+      theresults <- theresults
       
       if(input$balancedaccSelect == "Yes"){
         
