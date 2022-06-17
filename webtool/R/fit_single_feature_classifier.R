@@ -10,10 +10,10 @@ fit_single_feature_models <- function(data, test_method, use_balanced_accuracy, 
   
   pb$tick()$print()
   
-  tmp <- data %>%
-    dplyr::select(c(.data$group, dplyr::all_of(feature)))
-  
   set.seed(seed)
+  
+  tmp <- clean_by_feature(data = data, x = feature) %>%
+    dplyr::select(-c(id))
   
   if(use_k_fold){
     
@@ -91,18 +91,18 @@ fit_single_feature_models <- function(data, test_method, use_balanced_accuracy, 
   
   if(use_empirical_null){
     
-    if(null_testing_method == "null model fits"){
+    if(null_testing_method == "NullModelFits"){
       
       # Run procedure
       
       nullOuts <- 1:num_permutations %>%
         purrr::map_df( ~ fit_empirical_null_models(data = tmp, 
-                                                s = .x,
-                                                test_method = test_method,
-                                                theControl = fitControl,
-                                                pb = NULL,
-                                                univariable = TRUE,
-                                                use_balanced_accuracy = use_balanced_accuracy)) %>%
+                                                   s = .x,
+                                                   test_method = test_method,
+                                                   theControl = fitControl,
+                                                   pb = NULL,
+                                                   univariable = TRUE,
+                                                   use_balanced_accuracy = use_balanced_accuracy)) %>%
         dplyr::mutate(category = "Null")
       
       finalOuts <- dplyr::bind_rows(mainOuts, nullOuts)
@@ -368,7 +368,9 @@ calculate_unpooled_null <- function(main_matrix, main_matrix_balanced = NULL, x,
 
 gather_binomial_info <- function(data, x){
   
-  mod <- stats::glm(formula = stats::formula(paste0("group ~ ", colnames(data[x]))), data = data, family = stats::binomial())
+  tmp <- clean_by_feature(data = data, x = x)
+  
+  mod <- stats::glm(formula = stats::formula(paste0("group ~ ", colnames(tmp[3]))), data = tmp, family = stats::binomial())
   
   tmp <- data.frame(feature = as.character(mod$terms[[3]]),
                     statistic_value = as.numeric(summary(mod)$coefficients[,3][2]),
@@ -377,22 +379,61 @@ gather_binomial_info <- function(data, x){
   return(tmp)
 }
 
-#-----------------------------
-# t-test and wilcox extraction
-#-----------------------------
+#------------------------------
+# t-test and wilcox comparisons
+#------------------------------
 
 mean_diff_calculator <- function(data, x, method){
   
+  tmp <- clean_by_feature(data = data, x = x)
+  
   if(method == "t-test"){
-    results <- stats::t.test(formula = stats::formula(paste0(colnames(data[x]), " ~ group")), data = data)
+    results <- stats::t.test(formula = stats::formula(paste0(colnames(tmp[3]), " ~ group")), data = tmp)
   } else{
-    results <- stats::wilcox.test(formula = stats::formula(paste0(colnames(data[x]), " ~ group")), data = data)
+    results <- stats::wilcox.test(formula = stats::formula(paste0(colnames(tmp[3]), " ~ group")), data = tmp)
   }
   
   results <- data.frame(feature = results$data.name, 
                         statistic_value = results$statistic, 
                         p_value = results$p.value)
   return(results)
+}
+
+#--------------------
+# Cleaning by feature
+#--------------------
+
+clean_by_feature <- function(data, x){
+  
+  themethod <- names(data[x])
+  
+  tmp_cleaner <- data %>%
+    dplyr::select(c(.data$id, .data$group, dplyr::all_of(x)))
+  
+  ncols <- ncol(tmp_cleaner)
+  
+  # Delete features that are all NaNs and features with constant values
+  
+  tmp_cleaner <- tmp_cleaner %>%
+    dplyr::select_if(~sum(!is.na(.)) > 0) %>%
+    dplyr::select(mywhere(~dplyr::n_distinct(.) > 1))
+  
+  if(ncol(tmp_cleaner) < ncols){
+    message(paste0("Dropped ", ncols - ncol(tmp_cleaner), "/", ncol(tmp_cleaner), " features from ", themethod, " due to containing NAs or only a constant."))
+  }
+  
+  # Check NAs
+  
+  nrows <- nrow(tmp_cleaner)
+  
+  tmp_cleaner <- tmp_cleaner %>%
+    tidyr::drop_na()
+  
+  if(nrow(tmp_cleaner) < nrows){
+    message(paste0("Dropped ", nrows - nrow(tmp_cleaner), " unique IDs due to NA values."))
+  }
+  
+  return(tmp_cleaner)
 }
 
 #-------------- Main exported function ---------------
@@ -449,7 +490,7 @@ mean_diff_calculator <- function(data, x, method){
 #'   use_k_fold = TRUE,
 #'   num_folds = 10,
 #'   use_empirical_null = TRUE,
-#'   null_testing_method = "model free shuffles",
+#'   null_testing_method = "ModelFreeShuffles",
 #'   p_value_method = "gaussian",
 #'   num_permutations = 50,
 #'   pool_empirical_null = FALSE,
@@ -461,7 +502,7 @@ mean_diff_calculator <- function(data, x, method){
 fit_single_feature_classifier <- function(data, id_var = "id", group_var = "group",
                                           test_method = "gaussprRadial", use_balanced_accuracy = FALSE,
                                           use_k_fold = FALSE, num_folds = 10, 
-                                          use_empirical_null = FALSE, null_testing_method = c("model free shuffles", "null model fits"),
+                                          use_empirical_null = FALSE, null_testing_method = c("ModelFreeShuffles", "NullModelFits"),
                                           p_value_method = c("empirical", "gaussian"), num_permutations = 50,
                                           pool_empirical_null = FALSE, seed = 123, return_raw_estimates = FALSE){
   
@@ -474,15 +515,15 @@ fit_single_feature_classifier <- function(data, id_var = "id", group_var = "grou
   '%ni%' <- Negate('%in%')
   
   if(expected_cols_1 %ni% the_cols){
-    stop("data should contain at least three columns called 'names', 'values', and 'method'. These are automatically produced by calculate_features(). Please consider running this first and then passing the resultant dataframe in to this function.")
+    stop("data should contain at least three columns called 'names', 'values', and 'method'. These are automatically produced by theft::calculate_features(). Please consider running this first and then passing the resultant dataframe to this function.")
   }
   
   if(expected_cols_2 %ni% the_cols){
-    stop("data should contain at least three columns called 'names', 'values', and 'method'. These are automatically produced by calculate_features(). Please consider running this first and then passing the resultant dataframe in to this function.")
+    stop("data should contain at least three columns called 'names', 'values', and 'method'. These are automatically produced by theft::calculate_features(). Please consider running this first and then passing the resultant dataframe to this function.")
   }
   
   if(expected_cols_3 %ni% the_cols){
-    stop("data should contain at least three columns called 'names', 'values', and 'method'. These are automatically produced by calculate_features(). Please consider running this first and then passing the resultant dataframe in to this function.")
+    stop("data should contain at least three columns called 'names', 'values', and 'method'. These are automatically produced by theft::calculate_features(). Please consider running this first and then passing the resultant dataframe to this function.")
   }
   
   if(!is.numeric(data$values)){
@@ -492,29 +533,36 @@ fit_single_feature_classifier <- function(data, id_var = "id", group_var = "grou
   if(!is.null(id_var) && !is.character(id_var)){
     stop("id_var should be a string specifying a variable in the input data that uniquely identifies each observation.")
   }
+  
   # Null testing options
   
-  theoptions <- c("model free shuffles", "null model fits")
-  
-  if(is.null(null_testing_method) || missing(null_testing_method)){
-    null_testing_method <- "model free shuffles"
-    message("No argument supplied to null_testing_method. Using 'model free shuffles' as default.")
+  if(length(null_testing_method) != 1 && test_method %ni% c("t-test", "wilcox", "binomial logistic")){
+    stop("null_testing_method should be a single string of either 'ModelFreeShuffles' or 'NullModelFits'.")
   }
   
-  if(length(null_testing_method) != 1){
-    stop("null_testing_method should be a single string of either 'model free shuffles' or 'null model fits'.")
+  if((is.null(null_testing_method) || missing(null_testing_method)) && test_method %ni% c("t-test", "wilcox", "binomial logistic")){
+    null_testing_method <- "ModelFreeShuffles"
+    message("No argument supplied to null_testing_method. Using 'ModelFreeShuffles' as default.")
   }
   
-  if(null_testing_method %ni% theoptions){
-    stop("null_testing_method should be a single string of either 'model free shuffles' or 'null model fits'.")
+  if(test_method %ni% c("t-test", "wilcox", "binomial logistic") && null_testing_method == "model free shuffles"){
+    message("'model free shuffles' is deprecated, please use 'ModelFreeShuffles' instead.")
+    null_testing_method <- "ModelFreeShuffles"
   }
   
-  if(null_testing_method == "model free shuffles" && pool_empirical_null){
-    stop("'model free shuffles' and pooled empirical null are incompatible (pooled null combines each feature's null into a grand null and features don'tt get a null if 'model free shuffles' is used). Please respecify.")
+  if(test_method %ni% c("t-test", "wilcox", "binomial logistic") && null_testing_method == "null model fits"){
+    message("'null model fits' is deprecated, please use 'NullModelFits' instead.")
+    null_testing_method <- "NullModelFits"
   }
   
-  if(null_testing_method == "model free shuffles" && num_permutations < 1000){
-    message("Null testing method 'model free shuffles' is fast. Consider running more permutations for more reliable results. N = 10000 is recommended.")
+  theoptions <- c("ModelFreeShuffles", "NullModelFits")
+  
+  if(test_method %ni% c("t-test", "wilcox", "binomial logistic") && null_testing_method %ni% theoptions){
+    stop("null_testing_method should be a single string of either 'ModelFreeShuffles' or 'NullModelFits'.")
+  }
+  
+  if(test_method %ni% c("t-test", "wilcox", "binomial logistic") && null_testing_method == "ModelFreeShuffles" && num_permutations < 1000){
+    message("Null testing method 'ModelFreeShuffles' is fast. Consider running more permutations for more reliable results. N = 10000 is recommended.")
   }
   
   # p-value options
@@ -592,34 +640,7 @@ fit_single_feature_classifier <- function(data, id_var = "id", group_var = "grou
   data_id <- data_id %>%
     dplyr::mutate(names = paste0(.data$method, "_", .data$names)) %>%
     dplyr::select(-c(.data$method)) %>%
-    tidyr::pivot_wider(id_cols = c("id", "group"), names_from = "names", values_from = "values")
-  
-  ncols <- ncol(data_id)
-  
-  # Delete features that are all NaNs and features with constant values
-  
-  data_id <- data_id %>%
-    dplyr::select_if(~sum(!is.na(.)) > 0) %>%
-    dplyr::select(mywhere(~dplyr::n_distinct(.) > 1))
-  
-  if(ncol(data_id) < ncols){
-    message(paste0("Dropped ", ncols - ncol(data_id), " features due to containing all NAs or only a constant."))
-  }
-  
-  # Check NAs
-  
-  nrows <- nrow(data_id)
-  
-  data_id <- data_id %>%
-    tidyr::drop_na()
-  
-  if(nrow(data_id) < nrows){
-    message(paste0("Dropped ", nrows - nrow(data_id), " unique IDs due to NA values."))
-  }
-  
-  # Clean up column (feature) names so models fit properly (mainly an issue with SVM formula)
-  
-  data_id <- data_id %>%
+    tidyr::pivot_wider(id_cols = c("id", "group"), names_from = "names", values_from = "values") %>%
     janitor::clean_names()
   
   #------------- Fit classifiers -------------
@@ -657,8 +678,10 @@ fit_single_feature_classifier <- function(data, id_var = "id", group_var = "grou
   
   if(test_method == "t-test"){
     
+    mean_diff_calculator_safe <- purrr::possibly(mean_diff_calculator, otherwise = NULL)
+    
     output <- 3:ncol(data_id) %>%
-      purrr::map_df(~ mean_diff_calculator(data = data_id, x = .x, method = test_method)) %>%
+      purrr::map_df(~ mean_diff_calculator_safe(data = data_id, x = .x, method = test_method)) %>%
       dplyr::distinct() %>%
       dplyr::mutate(feature = gsub(" .*", "\\1", .data$feature),
                     classifier_name = classifier_name,
@@ -668,8 +691,10 @@ fit_single_feature_classifier <- function(data, id_var = "id", group_var = "grou
     
   } else if (test_method == "wilcox"){
     
+    mean_diff_calculator_safe <- purrr::possibly(mean_diff_calculator, otherwise = NULL)
+    
     output <- 3:ncol(data_id) %>%
-      purrr::map_df(~ mean_diff_calculator(data = data_id, x = .x, method = test_method)) %>%
+      purrr::map_df(~ mean_diff_calculator_safe(data = data_id, x = .x, method = test_method)) %>%
       dplyr::distinct() %>%
       dplyr::mutate(feature = gsub(" .*", "\\1", .data$feature),
                     classifier_name = classifier_name,
@@ -679,11 +704,13 @@ fit_single_feature_classifier <- function(data, id_var = "id", group_var = "grou
     
   } else if (test_method == "binomial logistic"){
     
+    gather_binomial_info_safe <- purrr::possibly(gather_binomial_info, otherwise = NULL)
+    
     data_id <- data_id %>%
       dplyr::mutate(group = as.factor(.data$group))
     
     output <- 3:ncol(data_id) %>%
-      purrr::map_df(~ gather_binomial_info(data_id, .x)) %>%
+      purrr::map_df(~ gather_binomial_info_safe(data_id, .x)) %>%
       dplyr::mutate(classifier_name = classifier_name,
                     statistic_name = statistic_name)
     
@@ -697,7 +724,7 @@ fit_single_feature_classifier <- function(data, id_var = "id", group_var = "grou
     
     # Very important coffee console message
     
-    if(use_empirical_null & null_testing_method == "null model fits"){
+    if(use_empirical_null & null_testing_method == "ModelFreeShuffles"){
       message("This will take a while. Great reason to go grab a coffee and relax ^_^")
     }
     
@@ -721,9 +748,14 @@ fit_single_feature_classifier <- function(data, id_var = "id", group_var = "grou
     output <- output[!sapply(output, is.null)]
     output <- do.call(rbind, output)
     
+    if(nrow(output) < (ncol(data_id) - 2)){
+      difference <- (ncol(data_id) - 2) - nrow(output)
+      message(paste0(difference, " features failed due to NAs or other errors."))
+    }
+    
     # Run nulls if random shuffles are to be used
     
-    if(null_testing_method == "model free shuffles"){
+    if(null_testing_method == "ModelFreeShuffles"){
       
       # Run random shuffles procedure
       
@@ -734,7 +766,7 @@ fit_single_feature_classifier <- function(data, id_var = "id", group_var = "grou
       
       nullOuts <- simulate_null_acc(x = x_prep, num_permutations = num_permutations, use_balanced_accuracy) %>%
         dplyr::mutate(category = "Null",
-                      feature = "model free shuffles")
+                      feature = "ModelFreeShuffles")
       
       if(use_k_fold){
         nullOuts <- nullOuts %>%
@@ -819,7 +851,7 @@ fit_single_feature_classifier <- function(data, id_var = "id", group_var = "grou
         
       } else{
         
-        if(null_testing_method == "null model fits"){
+        if(null_testing_method == "NullModelFits"){
           
           if(use_balanced_accuracy){
             

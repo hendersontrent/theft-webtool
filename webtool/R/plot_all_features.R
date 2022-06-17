@@ -28,7 +28,7 @@
 #'   feature_set = "catch22",
 #'   seed = 123)
 #'
-#' plot_feature_matrix(featMat, 
+#' plot_all_features(featMat, 
 #'   is_normalised = FALSE, 
 #'   id_var = "id", 
 #'   method = "RobustSigmoid",
@@ -36,12 +36,10 @@
 #'   interactive = FALSE)
 #'
 
-plot_feature_matrix <- function(data, is_normalised = FALSE, id_var = "id", 
-                                method = c("z-score", "Sigmoid", "RobustSigmoid", "MinMax"),
-                                clust_method = c("average", "ward.D", "ward.D2", "single", "complete", "mcquitty", "median", "centroid"),
-                                interactive = FALSE){
-  
-  message("plot_feature_matrix is deprecated as of v0.3.6. Please use 'plot_al_features' instead.")
+plot_all_features <- function(data, is_normalised = FALSE, id_var = "id", 
+                              method = c("z-score", "Sigmoid", "RobustSigmoid", "MinMax"),
+                              clust_method = c("average", "ward.D", "ward.D2", "single", "complete", "mcquitty", "median", "centroid"),
+                              interactive = FALSE){
   
   # Make RobustSigmoid the default
   
@@ -191,8 +189,7 @@ plot_feature_matrix <- function(data, is_normalised = FALSE, id_var = "id",
   }
   
   p <- p +
-    ggplot2::labs(title = "Data matrix",
-                  x = "Feature",
+    ggplot2::labs(x = "Feature",
                   y = "Time series") +
     ggplot2::theme_bw() + 
     ggplot2::theme(axis.text.y = ggplot2::element_blank(),
