@@ -956,7 +956,11 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
         ggplot2::ggplot(ggplot2::aes(x = stats::reorder(.data$method, -.data$statistic), 
                                      text = paste('<b>Method: </b>', method,
                                                   paste0('<br><b>Classification accuracy: </b>', 
-                                                         round(statistic, digits = 2), "%")),
+                                                         round(statistic, digits = 2), "%"),
+                                                  paste0('<br><b>Lower bound: </b>', 
+                                                         round(lower, digits = 2), "%"),
+                                                  paste0('<br><b>Upper bound: </b>', 
+                                                         round(upper, digits = 2), "%")),
                                      colour = .data$method)) +
         ggplot2::geom_hline(yintercept = chance, colour = "black", lty = "dashed", size = 1) +
         ggplot2::geom_point(ggplot2::aes(y = .data$statistic), size = 3) +
@@ -1131,9 +1135,13 @@ fit_multi_feature_classifier <- function(data, id_var = "id", group_var = "group
       
       FeatureSetResultsPlot <- accuracies %>%
         ggplot2::ggplot(ggplot2::aes(x = .data$method,
-                                     text = paste('<b>Method: </b>', method, 
-                                                  paste0('<br><b>Classification accuracy: </b>',
-                                                         round(statistic, digits = 2), "%")))) +
+                                     text = paste('<b>Method: </b>', method,
+                                                  paste0('<br><b>Classification accuracy: </b>', 
+                                                         round(statistic, digits = 2), "%"),
+                                                  paste0('<br><b>Lower bound: </b>', 
+                                                         round(lower, digits = 2), "%"),
+                                                  paste0('<br><b>Upper bound: </b>', 
+                                                         round(upper, digits = 2), "%")))) +
         ggplot2::geom_hline(yintercept = chance, colour = "black", lty = "dashed", size = 1) +
         ggplot2::geom_point(ggplot2::aes(y = .data$statistic), colour = "#1B9E77", size = 3) +
         ggplot2::geom_errorbar(ggplot2::aes(ymin = .data$lower, ymax = .data$upper), colour = "#1B9E77", size = 1)
