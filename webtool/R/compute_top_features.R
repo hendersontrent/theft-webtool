@@ -4,15 +4,12 @@
 # Pairwise correlation plot
 #--------------------------
 
-draw_top_feature_plot <- function(data, method, cor_method, clust_method, num_features){
+draw_top_feature_plot <- function(data, cor_method, clust_method, num_features){
   
   # Wrangle dataframe
   
   cor_dat <- data %>%
     dplyr::select(c(.data$id, .data$names, .data$values)) %>%
-    tidyr::drop_na() %>%
-    dplyr::group_by(.data$names) %>%
-    dplyr::mutate(values = normalise_feature_vector(.data$values, method = method)) %>%
     tidyr::drop_na() %>%
     tidyr::pivot_wider(id_cols = .data$id, names_from = .data$names, values_from = .data$values) %>%
     dplyr::select(-c(.data$id))
@@ -542,24 +539,10 @@ compute_top_features <- function(data, id_var = "id", group_var = "group",
   # Feature x feature plot
   #-----------------------
   
-  # Wrap in a try because sometimes normalisation methods create issues that error out the whole function
-  
   FeatureFeatureCorrelationPlot <- try(draw_top_feature_plot(data = dataFiltered,
-                                                             method = method,
                                                              cor_method = cor_method,
                                                              clust_method = clust_method,
                                                              num_features = num_features))
-  
-  if("try-error" %in% class(FeatureFeatureCorrelationPlot)){
-    
-    message("An error occured producing the summary plot. Re-running with z-score normalisation to see if error is corrected.")
-    
-    FeatureFeatureCorrelationPlot <- try(draw_top_feature_plot(data = dataFiltered,
-                                                               method = "z-score",
-                                                               cor_method = cor_method,
-                                                               clust_method = clust_method,
-                                                               num_features = num_features))
-  }
   
   #---------------
   # Violin plot
@@ -578,7 +561,7 @@ compute_top_features <- function(data, id_var = "id", group_var = "group",
   
   if("try-error" %in% class(FeatureFeatureCorrelationPlot)){
     
-    message("An error occured in producing the second attempted graphic with different normalisation. Only returning numerical results and violin plots instead.")
+    message("An error occured in producing the pairwise correlation plot. Only returning numerical results and violin plots instead.")
     myList <- list(ResultsTable, ViolinPlots)
     names(myList) <- c("ResultsTable", "ViolinPlots")
     

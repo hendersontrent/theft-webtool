@@ -418,7 +418,7 @@ shinyServer <- function(input, output, session) {
     # Render plot
     
     plot_feature_correlations(data = featureMatrix(), is_normalised = FALSE, id_var = "id", names_var = "names", values_var = "values",
-                             method = input$inputScaler2, cor_method = input$corMethod, clust_method = input$clustMethod, interactive = TRUE)
+                              cor_method = input$corMethod, clust_method = input$clustMethod, interactive = TRUE)
   })
   
   #-------------------------------
@@ -437,7 +437,7 @@ shinyServer <- function(input, output, session) {
     # Render plot
     
     plot_ts_correlations(data = tmp(), is_normalised = FALSE, id_var = "id", values_var = "values",
-                         method = input$inputScaler2, cor_method = input$corMethod, clust_method = input$clustMethod, interactive = TRUE)
+                         cor_method = input$corMethod, clust_method = input$clustMethod, interactive = TRUE)
   })
   
   #------------------ Classifier page ------------------

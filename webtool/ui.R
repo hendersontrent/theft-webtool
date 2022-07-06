@@ -217,21 +217,21 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                             tabPanel("Time Series x Feature Matrix",
                                                      fluidRow(
                                 column(11,
-                                  shinycssloaders::withSpinner(plotlyOutput("id_by_feat_plot", height = "750px"))
+                                  shinycssloaders::withSpinner(plotlyOutput("id_by_feat_plot", height = "800px"))
                          )
                         )
                        ),
                        tabPanel("Feature x Feature Matrix",
                                 fluidRow(
                                   column(11,
-                                         shinycssloaders::withSpinner(plotlyOutput("feat_by_feat_plot", height = "750px"))
+                                         shinycssloaders::withSpinner(plotlyOutput("feat_by_feat_plot", height = "800px"))
                                   )
                                  )
                                 ),
                        tabPanel("Time Series x Time Series Matrix",
                                 fluidRow(
                                   column(11,
-                                         shinycssloaders::withSpinner(plotlyOutput("id_by_id_plot", height = "750px"))
+                                         shinycssloaders::withSpinner(plotlyOutput("id_by_id_plot", height = "800px"))
                          )
                         )
                        )
@@ -318,13 +318,13 @@ shinyUI(navbarPage(theme = "corp-styles.css",
                                                      fluidRow(
                                                        h3("Pairwise Correlations between Top Features"),
                                                        column(11,
-                                                              shinycssloaders::withSpinner(plotlyOutput("top_feature_cor_plot", height = "700px"))
+                                                              shinycssloaders::withSpinner(plotlyOutput("top_feature_cor_plot", height = "800px"))
                                                        )
                                                      ),
                                                      fluidRow(
                                                        h3("Distribution of Values by Feature and Class"),
                                                        column(11,
-                                                              shinycssloaders::withSpinner(plotlyOutput("top_feature_violin_plot", height = "700px"))
+                                                              shinycssloaders::withSpinner(plotlyOutput("top_feature_violin_plot", height = "800px"))
                                                        )
                                                      ),
                                                      
